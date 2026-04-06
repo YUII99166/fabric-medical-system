@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医生端色盲流程设计图</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        #canvas-container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        canvas {
+            display: block;
+            width: 1100px;
+            height: 1600px;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="doctorWorkflowCanvas" width="2200" height="3200"></canvas>
+    </div>
+    <div class="controls">
+        <button onclick="downloadImage()">下载为PNG图片</button>
+        <button onclick="copyToClipboard()">复制到剪贴板</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('doctorWorkflowCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 使用2.5倍分辨率提高清晰度
+        const s = 2.5;
+        
+        ctx.imageSmoothingEnabled = false;
+        ctx.imageSmoothingQuality = 'high';
+
+        // 绘制矩形（无圆角）
+        function drawRect(x, y, width, height, fill, stroke, lineWidth = 3) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, y, width, height);
+            if (fill) {
+                ctx.fillStyle = fill;
+                ctx.fill();
+            }
+            if (stroke) {
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 绘制圆角矩形（用于开始/结束）
+        function drawRoundRect(x, y, width, height, radius, fill, stroke, lineWidth = 3) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) {
+                ctx.fillStyle = fill;
+                ctx.fill();
+            }
+            if (stroke) {
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 绘制菱形
+        function drawDiamond(x, y, width, height, fill, stroke, lineWidth = 3) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x, y - height/2);
+            ctx.lineTo(x + width/2, y);
+            ctx.lineTo(x, y + height/2);
+            ctx.lineTo(x - width/2, y);
+            ctx.closePath();
+            if (fill) {
+                ctx.fillStyle = fill;
+                ctx.fill();
+            }
+            if (stroke) {
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 绘制箭头线
+        function drawArrowLine(fromX, fromY, toX, toY, color = '#000', lineWidth = 3) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = lineWidth;
+            
+            // 绘制线条
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            
+            // 计算箭头角度
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            const arrowLength = 10;
+            const arrowAngle = Math.PI / 6;
+            
+            // 绘制箭头
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(
+                toX - arrowLength * Math.cos(angle - arrowAngle),
+                toY - arrowLength * Math.sin(angle - arrowAngle)
+            );
+            ctx.lineTo(
+                toX - arrowLength * Math.cos(angle + arrowAngle),
+                toY - arrowLength * Math.sin(angle + arrowAngle)
+            );
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        // 绘制直线（无箭头）
+        function drawLine(fromX, fromY, toX, toY, color = '#000', lineWidth = 3) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制文本（竖向）
+        function drawText(text, x, y, fontSize = 12, fontWeight = 'bold') {
+            ctx.save();
+            ctx.fillStyle = '#000';
+            ctx.font = fontWeight + ' ' + (fontSize*s) + 'px "SimSun", "宋体", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // 将文字竖向排列
+            const chars = text.split('');
+            const lineHeight = fontSize * s * 1.3;
+            const startY = y - (chars.length - 1) * lineHeight / 2;
+            
+            chars.forEach((char, i) => {
+                ctx.fillText(char, x, startY + i * lineHeight);
+            });
+            
+            ctx.restore();
+        }
+        
+        // 绘制水平文本（用于特殊情况）
+        function drawTextH(text, x, y, fontSize = 12, fontWeight = 'bold', align = 'center') {
+            ctx.save();
+            ctx.fillStyle = '#000';
+            ctx.font = fontWeight + ' ' + (fontSize*s) + 'px "SimSun", "宋体", sans-serif';
+            ctx.textAlign = align;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, x, y);
+            ctx.restore();
+        }
+
+        // 清空画布
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const centerX = 550*s;
+        let y = 40*s;
+
+        // 1. 开始
+        drawRoundRect(centerX - 40*s, y, 80*s, 50*s, 20*s, '#ffffff', '#000');
+        drawText('开始', centerX, y + 25*s, 17);
+        y += 65*s;
+
+        // 2. 用户输入账号密码
+        drawArrowLine(centerX, y - 15*s, centerX, y);
+        drawRect(centerX - 35*s, y, 70*s, 180*s, '#ffffff', '#000');
+        drawText('用户输入账号密码', centerX, y + 90*s, 17);
+        y += 195*s;
+
+        // 3. 登录页面
+        drawArrowLine(centerX, y - 15*s, centerX, y);
+        drawRect(centerX - 30*s, y, 60*s, 100*s, '#ffffff', '#000');
+        drawText('登录页面', centerX, y + 50*s, 17);
+        y += 115*s;
+
+        // 4. 是否注册判断
+        drawArrowLine(centerX, y - 15*s, centerX, y);
+        drawDiamond(centerX, y + 50*s, 70*s, 100*s, '#ffffff', '#000');
+        drawText('是否注册', centerX, y + 50*s, 17);
+        
+        // 否 - 用户注册
+        const registerX = centerX + 160*s;
+        drawArrowLine(centerX + 35*s, y + 50*s, registerX - 30*s, y + 50*s);
+        drawTextH('否', centerX + 80*s, y + 40*s, 17);
+        drawRect(registerX - 30*s, y, 60*s, 100*s, '#ffffff', '#000');
+        drawText('用户注册', registerX, y + 50*s, 17);
+        
+        // 返回登录页面
+        drawLine(registerX, y + 100*s, registerX, y + 145*s);
+        drawLine(registerX, y + 145*s, centerX, y + 145*s);
+        drawArrowLine(centerX, y + 145*s, centerX, y + 100*s);
+        
+        y += 115*s;
+
+        // 5. 进入主页面
+        drawArrowLine(centerX, y - 15*s, centerX, y);
+        drawTextH('是', centerX + 10*s, y - 10*s, 17);
+        drawRect(centerX - 30*s, y, 60*s, 120*s, '#ffffff', '#000');
+        drawText('进入主页面', centerX, y + 60*s, 17);
+        const mainPageBottom = y + 120*s;
+        y += 135*s;
+
+        // 主功能模块起始Y坐标
+        const mainFuncY = y;
+        
+        // 从主页面框框底部到横线（添加箭头）
+        drawArrowLine(centerX, mainPageBottom, centerX, mainFuncY);
+        
+        // 定义6个主功能模块（根据医生端实际功能）
+        const mainFuncs = [
+            { name: '登录注册', x: 100*s },
+            { name: '创建病历', x: 230*s },
+            { name: '查看病历', x: 360*s },
+            { name: '申请跨院授权', x: 490*s },
+            { name: '补充记录', x: 620*s },
+            { name: '搜索病人', x: 750*s }
+        ];
+
+        // 从主页面到各主功能的连线
+        // 先画一条横线
+        const horizontalY = mainFuncY;
+        drawLine(mainFuncs[0].x, horizontalY, mainFuncs[5].x, horizontalY);
+        
+        // 从横线垂直向下到各主功能（箭头停在框框顶部）
+        mainFuncs.forEach(func => {
+            drawArrowLine(func.x, horizontalY, func.x, mainFuncY + 12*s);
+        });
+
+        // 绘制6个主功能模块（长方形：高度>宽度）
+        mainFuncs.forEach(func => {
+            const boxHeight = func.name.length * 30*s;
+            drawRect(func.x - 22*s, mainFuncY + 15*s, 44*s, boxHeight, '#ffffff', '#000');
+            drawText(func.name, func.x, mainFuncY + 15*s + boxHeight/2, 17);
+        });
+
+        // 子功能层Y坐标（增加间距以适应更长的主功能框框）
+        const subFuncY = mainFuncY + 200*s;
+
+        // 功能1：登录注册 - 2个子功能
+        const func1X = mainFuncs[0].x;
+        const func1Subs = [
+            { name: '用户注册', x: func1X - 30*s },
+            { name: '角色选择', x: func1X + 30*s }
+        ];
+        const func1HorizontalY = subFuncY;
+        const func1BoxHeight = mainFuncs[0].name.length * 30*s;
+        const func1BoxBottom = mainFuncY + 15*s + func1BoxHeight;
+        drawLine(func1X, func1BoxBottom + 3*s, func1X, func1HorizontalY);
+        drawLine(func1Subs[0].x, func1HorizontalY, func1Subs[1].x, func1HorizontalY);
+        func1Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawArrowLine(sub.x, func1HorizontalY, sub.x, subFuncY + 12*s);
+            drawRect(sub.x - 20*s, subFuncY + 15*s, 40*s, subBoxHeight, '#ffffff', '#000');
+            drawText(sub.name, sub.x, subFuncY + 15*s + subBoxHeight/2, 17);
+        });
+
+        // 功能2：创建病历 - 2个子功能
+        const func2X = mainFuncs[1].x;
+        const func2Subs = [
+            { name: '填写病历', x: func2X - 30*s },
+            { name: '提交上链', x: func2X + 30*s }
+        ];
+        const func2HorizontalY = subFuncY;
+        const func2BoxHeight = mainFuncs[1].name.length * 30*s;
+        const func2BoxBottom = mainFuncY + 15*s + func2BoxHeight;
+        drawLine(func2X, func2BoxBottom + 3*s, func2X, func2HorizontalY);
+        drawLine(func2Subs[0].x, func2HorizontalY, func2Subs[1].x, func2HorizontalY);
+        func2Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawArrowLine(sub.x, func2HorizontalY, sub.x, subFuncY + 12*s);
+            drawRect(sub.x - 20*s, subFuncY + 15*s, 40*s, subBoxHeight, '#ffffff', '#000');
+            drawText(sub.name, sub.x, subFuncY + 15*s + subBoxHeight/2, 17);
+        });
+
+        // 功能3：查看病历 - 2个子功能
+        const func3X = mainFuncs[2].x;
+        const func3Subs = [
+            { name: '病历列表', x: func3X - 30*s },
+            { name: '病历详情', x: func3X + 30*s }
+        ];
+        const func3HorizontalY = subFuncY;
+        const func3BoxHeight = mainFuncs[2].name.length * 30*s;
+        const func3BoxBottom = mainFuncY + 15*s + func3BoxHeight;
+        drawLine(func3X, func3BoxBottom + 3*s, func3X, func3HorizontalY);
+        drawLine(func3Subs[0].x, func3HorizontalY, func3Subs[1].x, func3HorizontalY);
+        func3Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawArrowLine(sub.x, func3HorizontalY, sub.x, subFuncY + 12*s);
+            drawRect(sub.x - 20*s, subFuncY + 15*s, 40*s, subBoxHeight, '#ffffff', '#000');
+            drawText(sub.name, sub.x, subFuncY + 15*s + subBoxHeight/2, 17);
+        });
+
+        // 功能4：申请跨院授权 - 2个子功能
+        const func4X = mainFuncs[3].x;
+        const func4Subs = [
+            { name: '提交申请', x: func4X - 30*s },
+            { name: '授权状态', x: func4X + 30*s }
+        ];
+        const func4HorizontalY = subFuncY;
+        const func4BoxHeight = mainFuncs[3].name.length * 30*s;
+        const func4BoxBottom = mainFuncY + 15*s + func4BoxHeight;
+        drawLine(func4X, func4BoxBottom + 3*s, func4X, func4HorizontalY);
+        drawLine(func4Subs[0].x, func4HorizontalY, func4Subs[1].x, func4HorizontalY);
+        func4Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawArrowLine(sub.x, func4HorizontalY, sub.x, subFuncY + 12*s);
+            drawRect(sub.x - 20*s, subFuncY + 15*s, 40*s, subBoxHeight, '#ffffff', '#000');
+            drawText(sub.name, sub.x, subFuncY + 15*s + subBoxHeight/2, 17);
+        });
+
+        // 功能5：补充记录 - 2个子功能
+        const func5X = mainFuncs[4].x;
+        const func5Subs = [
+            { name: '查看记录', x: func5X - 30*s },
+            { name: '添加记录', x: func5X + 30*s }
+        ];
+        const func5HorizontalY = subFuncY;
+        const func5BoxHeight = mainFuncs[4].name.length * 30*s;
+        const func5BoxBottom = mainFuncY + 15*s + func5BoxHeight;
+        drawLine(func5X, func5BoxBottom + 3*s, func5X, func5HorizontalY);
+        drawLine(func5Subs[0].x, func5HorizontalY, func5Subs[1].x, func5HorizontalY);
+        func5Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawArrowLine(sub.x, func5HorizontalY, sub.x, subFuncY + 12*s);
+            drawRect(sub.x - 20*s, subFuncY + 15*s, 40*s, subBoxHeight, '#ffffff', '#000');
+            drawText(sub.name, sub.x, subFuncY + 15*s + subBoxHeight/2, 17);
+        });
+
+        // 功能6：搜索病人 - 2个子功能
+        const func6X = mainFuncs[5].x;
+        const func6Subs = [
+            { name: '搜索病人', x: func6X - 30*s },
+            { name: '查看信息', x: func6X + 30*s }
+        ];
+        const func6HorizontalY = subFuncY;
+        const func6BoxHeight = mainFuncs[5].name.length * 30*s;
+        const func6BoxBottom = mainFuncY + 15*s + func6BoxHeight;
+        drawLine(func6X, func6BoxBottom + 3*s, func6X, func6HorizontalY);
+        drawLine(func6Subs[0].x, func6HorizontalY, func6Subs[1].x, func6HorizontalY);
+        func6Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawArrowLine(sub.x, func6HorizontalY, sub.x, subFuncY + 12*s);
+            drawRect(sub.x - 20*s, subFuncY + 15*s, 40*s, subBoxHeight, '#ffffff', '#000');
+            drawText(sub.name, sub.x, subFuncY + 15*s + subBoxHeight/2, 17);
+        });
+
+        // 汇聚层Y坐标（增加以适应更长的子功能框框）
+        const gatherY = subFuncY + 150*s;
+
+        // 所有分支汇聚到底部中心线
+        // 功能1的2个子功能
+        func1Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawLine(sub.x, subFuncY + 15*s + subBoxHeight + 3*s, sub.x, gatherY);
+        });
+        drawLine(func1Subs[0].x, gatherY, func1Subs[1].x, gatherY);
+        drawLine(func1X, gatherY, func1X, gatherY + 20*s);
+
+        // 功能2的2个子功能
+        func2Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawLine(sub.x, subFuncY + 15*s + subBoxHeight + 3*s, sub.x, gatherY);
+        });
+        drawLine(func2Subs[0].x, gatherY, func2Subs[1].x, gatherY);
+        drawLine(func2X, gatherY, func2X, gatherY + 20*s);
+
+        // 功能3的2个子功能
+        func3Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawLine(sub.x, subFuncY + 15*s + subBoxHeight + 3*s, sub.x, gatherY);
+        });
+        drawLine(func3Subs[0].x, gatherY, func3Subs[1].x, gatherY);
+        drawLine(func3X, gatherY, func3X, gatherY + 20*s);
+
+        // 功能4的2个子功能
+        func4Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawLine(sub.x, subFuncY + 15*s + subBoxHeight + 3*s, sub.x, gatherY);
+        });
+        drawLine(func4Subs[0].x, gatherY, func4Subs[1].x, gatherY);
+        drawLine(func4X, gatherY, func4X, gatherY + 20*s);
+
+        // 功能5的2个子功能
+        func5Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawLine(sub.x, subFuncY + 15*s + subBoxHeight + 3*s, sub.x, gatherY);
+        });
+        drawLine(func5Subs[0].x, gatherY, func5Subs[1].x, gatherY);
+        drawLine(func5X, gatherY, func5X, gatherY + 20*s);
+
+        // 功能6的2个子功能
+        func6Subs.forEach(sub => {
+            const subBoxHeight = sub.name.length * 30*s;
+            drawLine(sub.x, subFuncY + 15*s + subBoxHeight + 3*s, sub.x, gatherY);
+        });
+        drawLine(func6Subs[0].x, gatherY, func6Subs[1].x, gatherY);
+        drawLine(func6X, gatherY, func6X, gatherY + 20*s);
+
+        // 所有主功能汇聚到中心
+        const finalGatherY = gatherY + 20*s;
+        drawLine(func1X, finalGatherY, func6X, finalGatherY);
+        drawArrowLine(centerX, finalGatherY, centerX, finalGatherY + 30*s);
+
+        // 结束
+        const endY = finalGatherY + 30*s;
+        drawRoundRect(centerX - 40*s, endY, 80*s, 50*s, 20*s, '#ffffff', '#000');
+        drawText('结束', centerX, endY + 25*s, 17);
+
+        // 下载图片（最高清晰度）
+        function downloadImage() {
+            canvas.toBlob(function(blob) {
+                const link = document.createElement('a');
+                link.download = '医生端色盲流程设计图.png';
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                // 释放对象URL
+                setTimeout(() => URL.revokeObjectURL(link.href), 100);
+            }, 'image/png', 1.0);
+        }
+
+        // 复制到剪贴板（最高清晰度）
+        async function copyToClipboard() {
+            try {
+                const blob = await new Promise(resolve => 
+                    canvas.toBlob(resolve, 'image/png', 1.0)
+                );
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+                alert('已复制到剪贴板！');
+            } catch (err) {
+                alert('复制失败，请使用下载功能');
+            }
+        }
+    </script>
+</body>
+</html>

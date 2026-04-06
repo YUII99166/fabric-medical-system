@@ -1,0 +1,188 @@
+version: 1.0.0
+
+# GO SDK使用的客户端部分。
+client:
+  # 客户端所属的组织，必须是organizations定义的组织
+  organization: JD
+  # 日志级别
+  logging:
+    level: info
+  # MSP证书的根路径
+  cryptoconfig:
+    path: ../../network/crypto-config
+
+# 通道定义
+channels:
+  appchannel:
+    orderers:
+      - orderer.qq.com
+    peers:
+      peer0.taobao.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+      peer1.taobao.com:
+        endorsingPeer: false
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: false
+      peer0.jd.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+      peer1.jd.com:
+        endorsingPeer: false
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: false
+      peer0.wenjin.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+      peer1.wenjin.com:
+        endorsingPeer: false
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: false
+      peer0.regcenter.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+      peer1.regcenter.com:
+        endorsingPeer: false
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: false
+
+# 组织配置
+organizations:
+  Taobao:
+    mspid: "TaobaoMSP"
+    cryptoPath: peerOrganizations/taobao.com/users/{username}@taobao.com/msp
+    peers:
+      - peer0.taobao.com
+      - peer1.taobao.com
+  
+  JD:
+    mspid: "JDMSP"
+    cryptoPath: peerOrganizations/jd.com/users/{username}@jd.com/msp
+    peers:
+      - peer0.jd.com
+      - peer1.jd.com
+  
+  Wenjin:
+    mspid: "WenjinMSP"
+    cryptoPath: peerOrganizations/wenjin.com/users/{username}@wenjin.com/msp
+    peers:
+      - peer0.wenjin.com
+      - peer1.wenjin.com
+  
+  RegCenter:
+    mspid: "RegCenterMSP"
+    cryptoPath: peerOrganizations/regcenter.com/users/{username}@regcenter.com/msp
+    peers:
+      - peer0.regcenter.com
+      - peer1.regcenter.com
+
+# orderer节点列表
+orderers:
+  orderer.qq.com:
+    url: localhost:7050
+    # 传递给gRPC客户端构造函数
+    grpcOptions:
+      ssl-target-name-override: orderer.qq.com
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true
+
+# peers节点列表
+peers:
+  # Taobao组织的peer节点
+  peer0.taobao.com:
+    url: localhost:7051
+    grpcOptions:
+      ssl-target-name-override: peer0.taobao.com
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true
+  
+  peer1.taobao.com:
+    url: localhost:17051
+    grpcOptions:
+      ssl-target-name-override: peer1.taobao.com
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true
+  
+  # JD组织的peer节点
+  peer0.jd.com:
+    url: localhost:27051
+    grpcOptions:
+      ssl-target-name-override: peer0.jd.com
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true
+  
+  peer1.jd.com:
+    url: localhost:37051
+    grpcOptions:
+      ssl-target-name-override: peer1.jd.com
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true
+  
+  # Wenjin组织的peer节点（成都温江社区医疗中心）
+  peer0.wenjin.com:
+    url: localhost:47051
+    grpcOptions:
+      ssl-target-name-override: peer0.wenjin.com
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true
+  
+  peer1.wenjin.com:
+    url: localhost:57051
+    grpcOptions:
+      ssl-target-name-override: peer1.wenjin.com
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true
+  
+  # RegCenter组织的peer节点（监管中心）
+  peer0.regcenter.com:
+    url: localhost:8051
+    grpcOptions:
+      ssl-target-name-override: peer0.regcenter.com
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true
+  
+  peer1.regcenter.com:
+    url: localhost:9051
+    grpcOptions:
+      ssl-target-name-override: peer1.regcenter.com
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true

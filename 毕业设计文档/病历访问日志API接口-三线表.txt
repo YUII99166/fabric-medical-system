@@ -1,0 +1,6 @@
+病历访问日志API接口
+
+接口名称	请求方法	请求路径	功能描述
+记录病历访问	POST	/access-trace/record	记录病历访问日志到区块链
+查询访问日志	GET	/access-trace/logs	患者查询自己病历的访问日志
+查询访问统计	GET	/access-trace/statistics	查询病历访问统计数据

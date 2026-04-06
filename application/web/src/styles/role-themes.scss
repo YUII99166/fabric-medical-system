@@ -1,0 +1,46 @@
+// 角色主题配置
+$themes: (
+  admin: (
+    primary: #409EFF,
+    menuBg: #2c3e50,
+    menuHover: #34495e,
+    subMenuBg: #1f2d3d,
+    gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
+  ),
+  doctor: (
+    primary: #67C23A,
+    menuBg: #2d5f3f,
+    menuHover: #3a7a52,
+    subMenuBg: #1e4029,
+    gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)
+  ),
+  patient: (
+    primary: #E6A23C,
+    menuBg: #5f4a2d,
+    menuHover: #7a5f3a,
+    subMenuBg: #40311e,
+    gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)
+  ),
+  drugstore: (
+    primary: #9C27B0,
+    menuBg: #4a2d5f,
+    menuHover: #5f3a7a,
+    subMenuBg: #311e40,
+    gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)
+  ),
+  insurance: (
+    primary: #F56C6C,
+    menuBg: #5f2d2d,
+    menuHover: #7a3a3a,
+    subMenuBg: #401e1e,
+    gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%)
+  )
+);
+
+// 导出主题变量供 JS 使用
+:export {
+  @each $role, $theme in $themes {
+    #{$role}Primary: map-get($theme, primary);
+    #{$role}MenuBg: map-get($theme, menuBg);
+  }
+}

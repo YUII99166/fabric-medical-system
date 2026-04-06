@@ -1,0 +1,5 @@
+联盟活动监控API接口
+
+接口名称	请求方法	请求路径	功能描述
+查询联盟活动	GET	/activity/list	查询联盟组织活动列表
+查询活动统计	GET	/activity/statistics	查询联盟活动统计数据

@@ -1,0 +1,6 @@
+授权请求管理API接口
+
+接口名称	请求方法	请求路径	功能描述
+申请授权	POST	/access/request	医生申请访问患者病历的授权
+审批授权	POST	/access/approve	患者审批医生的授权请求
+查询授权请求	POST	/access/requests	查询授权请求列表（医生或患者）

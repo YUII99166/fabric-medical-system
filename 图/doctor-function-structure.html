@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医生端功能结构图 - 黑白版</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        #canvas-container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        canvas {
+            display: block;
+            width: 900px;
+            height: 440px;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="doctorCanvas" width="2250" height="1100"></canvas>
+    </div>
+    <div class="controls">
+        <button onclick="downloadImage()">下载为PNG图片</button>
+        <button onclick="copyToClipboard()">复制到剪贴板</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('doctorCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 使用2.5倍分辨率提高清晰度
+        const s = 2.5;
+        
+        ctx.imageSmoothingEnabled = false;
+
+        // 绘制圆角矩形
+        function roundRect(x, y, width, height, radius, fill, stroke) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) {
+                ctx.fillStyle = fill;
+                ctx.fill();
+            }
+            if (stroke) {
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 绘制连接线
+        function drawLine(fromX, fromY, toX, toY, color = '#000') {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制箭头（线条和箭头分离，确保对齐）
+        function drawArrow(fromX, fromY, toX, toY, color = '#000') {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 3;
+            
+            // 计算箭头角度
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            const arrowLength = 16;
+            const arrowAngle = Math.PI / 6;
+            
+            // 绘制线条（到箭头底部）
+            const arrowBaseX = toX - arrowLength * 0.6 * Math.cos(angle);
+            const arrowBaseY = toY - arrowLength * 0.6 * Math.sin(angle);
+            
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(arrowBaseX, arrowBaseY);
+            ctx.stroke();
+            
+            // 绘制箭头（实心三角形）
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(
+                toX - arrowLength * Math.cos(angle - arrowAngle),
+                toY - arrowLength * Math.sin(angle - arrowAngle)
+            );
+            ctx.lineTo(
+                toX - arrowLength * Math.cos(angle + arrowAngle),
+                toY - arrowLength * Math.sin(angle + arrowAngle)
+            );
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        // 绘制文本
+        function drawText(text, x, y, align = 'center', color = '#000', fontSize = 17, fontWeight = 'normal') {
+            ctx.textAlign = align;
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = color;
+            ctx.font = fontWeight + ' ' + (fontSize*s) + 'px "SimSun", "宋体", sans-serif';
+            ctx.fillText(text, x, y);
+        }
+
+        // 绘制竖向文本
+        function drawVerticalText(text, x, y, color = '#000', fontSize = 17, fontWeight = 'normal') {
+            ctx.fillStyle = color;
+            ctx.font = fontWeight + ' ' + (fontSize*s) + 'px "SimSun", "宋体", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const chars = text.split('');
+            const lineHeight = fontSize*s + 3;
+            const startY = y - (chars.length * lineHeight) / 2 + 5;
+            
+            chars.forEach((char, index) => {
+                ctx.fillText(char, x, startY + index * lineHeight);
+            });
+        }
+
+        // 清空画布
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 绘制主标题（根节点）
+        roundRect(290*s, 25*s, 320*s, 45*s, 5*s, '#ffffff', '#000');
+        drawText('基于区块链的社区医疗管理信息系统', 450*s, 38*s, 'center', '#000', 17);
+        drawText('(医生端)', 450*s, 58*s, 'center', '#000', 17);
+
+        // 第一层：主要功能模块 - 水平排列（6个模块）
+        const mainModules = [
+            {name: '登录注册', x: 78*s, y: 115*s},
+            {name: '创建病历', x: 188*s, y: 115*s},
+            {name: '查看病历', x: 298*s, y: 115*s},
+            {name: '申请跨院授权', x: 408*s, y: 115*s},
+            {name: '添加补充记录', x: 528*s, y: 115*s},
+            {name: '搜索病人信息', x: 648*s, y: 115*s}
+        ];
+
+        // 计算第一层水平主干线的Y坐标（在箭头起点位置）
+        const firstTrunkY = mainModules[0].y - 20*s;
+        
+        // 从根节点向下的主干线（连接到第一层主干线）
+        drawLine(450*s, 70*s, 450*s, firstTrunkY);
+        
+        // 第一层水平主干线（端点对齐到最左和最右模块的中心）
+        const firstLeftX = mainModules[0].x + 15*s;
+        const firstRightX = mainModules[5].x + 15*s;
+        drawLine(firstLeftX, firstTrunkY, firstRightX, firstTrunkY);
+
+        // 绘制从主干线到主模块的垂直连接线和箭头
+        mainModules.forEach(module => {
+            const centerX = module.x + 15*s;
+            // 箭头从主干线指向模块顶部
+            drawArrow(centerX, firstTrunkY, centerX, module.y);
+        });
+
+        // 绘制主要功能模块
+        mainModules.forEach((module, index) => {
+            roundRect(module.x, module.y, 30*s, 130*s, 4*s, '#ffffff', '#000');
+            drawVerticalText(module.name, module.x + 15*s, module.y + 65*s, '#000', 17);
+        });
+
+        // 第二层水平主干线（每个主模块下方）
+        const subTrunkY = mainModules[0].y + 130*s + 20*s;
+        
+        const subTrunkLines = [
+            {x1: 60*s + 15*s, x2: 105*s + 15*s, y: subTrunkY, parent: 0},
+            {x1: 170*s + 15*s, x2: 215*s + 15*s, y: subTrunkY, parent: 1},
+            {x1: 280*s + 15*s, x2: 325*s + 15*s, y: subTrunkY, parent: 2},
+            {x1: 390*s + 15*s, x2: 435*s + 15*s, y: subTrunkY, parent: 3},
+            {x1: 510*s + 15*s, x2: 555*s + 15*s, y: subTrunkY, parent: 4},
+            {x1: 630*s + 15*s, x2: 675*s + 15*s, y: subTrunkY, parent: 5}
+        ];
+
+        // 绘制从主模块到子模块主干线的连接
+        subTrunkLines.forEach(trunk => {
+            const parent = mainModules[trunk.parent];
+            const centerX = parent.x + 15*s;
+            drawLine(centerX, parent.y + 130*s, centerX, trunk.y);
+            drawLine(trunk.x1, trunk.y, trunk.x2, trunk.y);
+        });
+
+        // 第二层：子功能模块 - 每个主模块下方两个子模块
+        const subModuleY = subTrunkY + 20*s;
+        
+        const subModules = [
+            // 登录注册子模块
+            {name: '用户登录', x: 60*s, y: subModuleY, parent: 0},
+            {name: '角色验证', x: 105*s, y: subModuleY, parent: 0},
+            
+            // 创建病历子模块
+            {name: '填写信息', x: 170*s, y: subModuleY, parent: 1},
+            {name: '开具处方', x: 215*s, y: subModuleY, parent: 1},
+            
+            // 查看病历子模块
+            {name: '病历列表', x: 280*s, y: subModuleY, parent: 2},
+            {name: '病历详情', x: 325*s, y: subModuleY, parent: 2},
+            
+            // 申请跨院授权子模块
+            {name: '授权申请', x: 390*s, y: subModuleY, parent: 3},
+            {name: '授权状态', x: 435*s, y: subModuleY, parent: 3},
+            
+            // 添加补充记录子模块
+            {name: '查看记录', x: 510*s, y: subModuleY, parent: 4},
+            {name: '添加记录', x: 555*s, y: subModuleY, parent: 4},
+            
+            // 搜索病人信息子模块
+            {name: '患者搜索', x: 630*s, y: subModuleY, parent: 5},
+            {name: '信息查看', x: 675*s, y: subModuleY, parent: 5}
+        ];
+
+        // 绘制从子模块主干线到子模块的连接线和箭头
+        subModules.forEach(sub => {
+            const trunk = subTrunkLines[sub.parent];
+            const centerX = sub.x + 15*s;
+            // 箭头直接从主干线指向子模块顶部
+            drawArrow(centerX, trunk.y, centerX, sub.y);
+            
+            // 子模块框（统一大小）
+            roundRect(sub.x, sub.y, 30*s, 130*s, 4*s, '#ffffff', '#000');
+            
+            // 子模块文字（竖向）
+            drawVerticalText(sub.name, centerX, sub.y + 65*s, '#000', 17);
+        });
+
+        // 下载图片
+        function downloadImage() {
+            canvas.toBlob(function(blob) {
+                const link = document.createElement('a');
+                link.download = '医生端功能结构图-黑白版.png';
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(link.href), 100);
+            }, 'image/png', 1.0);
+        }
+
+        // 复制到剪贴板
+        async function copyToClipboard() {
+            try {
+                const blob = await new Promise(resolve => 
+                    canvas.toBlob(resolve, 'image/png', 1.0)
+                );
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+                alert('已复制到剪贴板！');
+            } catch (err) {
+                alert('复制失败，请使用下载功能');
+            }
+        }
+    </script>
+</body>
+</html>

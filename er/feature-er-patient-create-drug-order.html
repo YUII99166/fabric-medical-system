@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>功能：患者下单药品订单（ER 图）</title>
+  <style>
+    body { margin: 20px; background: #f0f0f0; font-family: SimSun, serif; }
+    #wrap { background: white; padding: 30px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    button { margin: 10px 5px; padding: 8px 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
+    button:hover { background: #45a049; }
+  </style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c" width="3200" height="2600"></canvas>
+</div>
+<div>
+<button onclick="save()">下载图片</button>
+<button onclick="copy()">复制到剪贴板</button>
+<button onclick="window.location.href='./index.html'">返回索引</button>
+</div>
+<script>
+const c = document.getElementById('c');
+const g = c.getContext('2d', { alpha: false });
+g.imageSmoothingEnabled = false;
+g.fillStyle = '#ffffff';
+g.fillRect(0, 0, 3200, 2600);
+
+function entity(x, y, w, h, text) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.fillRect(x, y, w, h);
+    g.strokeRect(x, y, w, h);
+    g.fillStyle = '#000';
+    g.font = 'normal 60px 宋体, SimSun, STSong';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x + w/2, y + h/2);
+}
+
+function relation(x, y, w, h, text) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(x + w/2, y);
+    g.lineTo(x + w, y + h/2);
+    g.lineTo(x + w/2, y + h);
+    g.lineTo(x, y + h/2);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#000';
+    g.font = 'normal 52px 宋体, SimSun, STSong';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x + w/2, y + h/2);
+}
+
+function attribute(x, y, w, h, text, isKey = false) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = isKey ? 4 : 2;
+    g.beginPath();
+    g.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#000';
+    g.font = 'normal 42px 宋体, SimSun, STSong';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    if (isKey) {
+        g.fillText(text, x + w/2, y + h/2);
+        const tw = g.measureText(text).width;
+        g.beginPath();
+        g.moveTo(x + w/2 - tw/2, y + h/2 + 20);
+        g.lineTo(x + w/2 + tw/2, y + h/2 + 20);
+        g.stroke();
+    } else {
+        g.fillText(text, x + w/2, y + h/2);
+    }
+}
+
+function line(x1, y1, x2, y2) {
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+}
+
+function getRectEdgePoint(rectX, rectY, rectW, rectH, targetX, targetY) {
+    const centerX = rectX + rectW / 2, centerY = rectY + rectH / 2;
+    const dx = targetX - centerX, dy = targetY - centerY;
+    if (dx === 0 && dy === 0) return { x: centerX, y: centerY };
+    const angle = Math.atan2(dy, dx), absAngle = Math.abs(angle);
+    if (absAngle < Math.atan2(rectH, rectW)) {
+        return { x: rectX + rectW, y: centerY + (rectW / 2) * Math.tan(angle) };
+    } else if (absAngle > Math.PI - Math.atan2(rectH, rectW)) {
+        return { x: rectX, y: centerY - (rectW / 2) * Math.tan(angle) };
+    } else if (angle > 0) {
+        return { x: centerX + (rectH / 2) / Math.tan(angle), y: rectY + rectH };
+    } else {
+        return { x: centerX - (rectH / 2) / Math.tan(angle), y: rectY };
+    }
+}
+
+function getEllipseEdgePoint(cx, cy, rx, ry, targetX, targetY) {
+    const dx = targetX - cx, dy = targetY - cy;
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    const angle = Math.atan2(dy, dx);
+    return { x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle) };
+}
+
+function getDiamondEdgePoint(cx, cy, w, h, targetX, targetY) {
+    const dx = targetX - cx, dy = targetY - cy;
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    const angle = Math.atan2(dy, dx);
+    const absAngle = Math.abs(angle);
+    const halfW = w / 2, halfH = h / 2;
+    if (absAngle < Math.atan2(halfH, halfW)) {
+        const t = halfW / Math.abs(Math.cos(angle));
+        return { x: cx + t * Math.cos(angle), y: cy + t * Math.sin(angle) };
+    } else if (absAngle > Math.PI - Math.atan2(halfH, halfW)) {
+        const t = halfW / Math.abs(Math.cos(angle));
+        return { x: cx + t * Math.cos(angle), y: cy + t * Math.sin(angle) };
+    } else {
+        const t = halfH / Math.abs(Math.sin(angle));
+        return { x: cx + t * Math.cos(angle), y: cy + t * Math.sin(angle) };
+    }
+}
+
+function label(text, x, y, size = 42, bold = false) {
+    g.fillStyle = '#000';
+    g.font = (bold ? 'bold ' : 'normal ') + size + 'px SimSun, 宋体, STSong';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x, y);
+}
+
+label('图 X.X 患者下单药品订单功能ER图', 1600, 100, 56, true);
+
+// 水平布局：患者 → 创建 → 药品订单
+const userX = 500, userY = 1300, userW = 300, userH = 160;
+entity(userX - 150, userY - 80, userW, userH, '患者');
+[
+    { cx: userX, cy: userY - 300, rx: 90, ry: 45, text: '用户ID', key: true },
+    { cx: userX - 270, cy: userY - 150, rx: 80, ry: 40, text: '姓名', key: false },
+    { cx: userX - 270, cy: userY, rx: 80, ry: 40, text: '角色', key: false },
+    { cx: userX - 270, cy: userY + 150, rx: 90, ry: 40, text: '联系电话', key: false }
+].forEach(attr => {
+    attribute(attr.cx - attr.rx, attr.cy - attr.ry, attr.rx * 2, attr.ry * 2, attr.text, attr.key);
+    const rectEdge = getRectEdgePoint(userX - 150, userY - 80, userW, userH, attr.cx, attr.cy);
+    const ellipseEdge = getEllipseEdgePoint(attr.cx, attr.cy, attr.rx, attr.ry, rectEdge.x, rectEdge.y);
+    line(rectEdge.x, rectEdge.y, ellipseEdge.x, ellipseEdge.y);
+});
+
+// 右侧：药品订单实体
+const orderX = 2700, orderY = 1300, orderW = 300, orderH = 160;
+entity(orderX - 150, orderY - 80, orderW, orderH, '药品订单');
+[
+    { cx: orderX, cy: orderY - 300, rx: 90, ry: 45, text: '订单ID', key: true },
+    { cx: orderX + 280, cy: orderY - 150, rx: 90, ry: 40, text: '药品名', key: false },
+    { cx: orderX + 280, cy: orderY, rx: 80, ry: 40, text: '数量', key: false },
+    { cx: orderX + 280, cy: orderY + 150, rx: 80, ry: 40, text: '状态', key: false },
+    { cx: orderX, cy: orderY + 250, rx: 90, ry: 40, text: '创建时间', key: false },
+    { cx: orderX - 280, cy: orderY, rx: 90, ry: 40, text: '配送地址', key: false }
+].forEach(attr => {
+    attribute(attr.cx - attr.rx, attr.cy - attr.ry, attr.rx * 2, attr.ry * 2, attr.text, attr.key);
+    const rectEdge = getRectEdgePoint(orderX - 150, orderY - 80, orderW, orderH, attr.cx, attr.cy);
+    const ellipseEdge = getEllipseEdgePoint(attr.cx, attr.cy, attr.rx, attr.ry, rectEdge.x, rectEdge.y);
+    line(rectEdge.x, rectEdge.y, ellipseEdge.x, ellipseEdge.y);
+});
+
+// 关系：患者-创建-药品订单（水平方向）
+const relX = 1300, relY = 1300, relW = 280, relH = 160;
+relation(relX - relW/2, relY - relH/2, relW, relH, '创建');
+
+// 患者到关系：连接到菱形左角
+const userToRelStart = getRectEdgePoint(userX - 150, userY - 80, userW, userH, relX, relY);
+const userToRelEnd = { x: relX - relW/2, y: relY }; // 菱形左角
+line(userToRelStart.x, userToRelStart.y, userToRelEnd.x, userToRelEnd.y);
+
+// 关系到订单：连接到菱形右角
+const relToOrderStart = { x: relX + relW/2, y: relY }; // 菱形右角
+const relToOrderEnd = getRectEdgePoint(orderX - 150, orderY - 80, orderW, orderH, relX, relY);
+line(relToOrderStart.x, relToOrderStart.y, relToOrderEnd.x, relToOrderEnd.y);
+
+// 基数标注（放在连接线中点）
+const userMidX = (userToRelStart.x + userToRelEnd.x) / 2;
+const userMidY = (userToRelStart.y + userToRelEnd.y) / 2;
+label('1', userMidX, userMidY - 30, 46, true);
+
+const orderMidX = (relToOrderStart.x + relToOrderEnd.x) / 2;
+const orderMidY = (relToOrderStart.y + relToOrderEnd.y) / 2;
+label('n', orderMidX, orderMidY - 30, 46, true);
+
+function save() {
+    const scale = 2, temp = document.createElement('canvas');
+    temp.width = c.width * scale;
+    temp.height = c.height * scale;
+    const tg = temp.getContext('2d', { alpha: false });
+    tg.imageSmoothingEnabled = false;
+    tg.scale(scale, scale);
+    tg.drawImage(c, 0, 0);
+    const a = document.createElement('a');
+    a.download = '患者下单药品订单功能ER图.png';
+    a.href = temp.toDataURL('image/png', 1.0);
+    a.click();
+}
+
+async function copy() {
+    try {
+        const scale = 2, temp = document.createElement('canvas');
+        temp.width = c.width * scale;
+        temp.height = c.height * scale;
+        const tg = temp.getContext('2d', { alpha: false });
+        tg.imageSmoothingEnabled = false;
+        tg.scale(scale, scale);
+        tg.drawImage(c, 0, 0);
+        const b = await new Promise(r => temp.toBlob(r, 'image/png', 1.0));
+        await navigator.clipboard.write([new ClipboardItem({'image/png': b})]);
+        alert('已复制到剪贴板');
+    } catch(e) {
+        alert('复制失败：' + e.message);
+    }
+}
+</script>
+</body>
+</html>

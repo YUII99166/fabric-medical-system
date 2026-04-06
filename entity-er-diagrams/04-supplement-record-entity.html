@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>补充记录实体ER图</title>
+    <style>
+        body { margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f5f5f5; }
+        svg { background-color: white; border: 1px solid #ddd; }
+        .entity { fill: white; stroke: #333; stroke-width: 2; }
+        .weak-entity { fill: white; stroke: #333; stroke-width: 3; }
+        .attribute { fill: white; stroke: #666; stroke-width: 1.5; }
+        .key-attribute { fill: white; stroke: #666; stroke-width: 2; }
+        .multi-attribute { fill: white; stroke: #666; stroke-width: 1.5; }
+        .line { stroke: #666; stroke-width: 1.5; fill: none; }
+        .text { font-family: 'Microsoft YaHei', Arial, sans-serif; font-size: 14px; fill: #333; text-anchor: middle; dominant-baseline: middle; }
+        .entity-text { font-size: 16px; font-weight: bold; }
+        .underline { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <svg width="1200" height="1000" viewBox="0 0 1200 1000">
+        <text class="text" x="600" y="30" style="font-size: 18px; font-weight: bold;">图 X.X 补充记录实体ER图（弱实体）</text>
+        
+        <!-- 中心实体：补充记录（弱实体，双线框） -->
+        <rect class="weak-entity" x="520" y="470" width="160" height="60" rx="5"/>
+        <rect class="entity" x="527" y="477" width="146" height="46" rx="5"/>
+        <text class="text entity-text" x="600" y="500">补充记录</text>
+        
+        <!-- 顶部属性组 -->
+        <!-- 主键：记录ID -->
+        <ellipse class="key-attribute" cx="600" cy="350" rx="50" ry="28"/>
+        <text class="text underline" x="600" y="350">记录ID</text>
+        <line class="line" x1="600" y1="470" x2="600" y2="378"/>
+        
+        <!-- 原始病历ID（外键） -->
+        <ellipse class="key-attribute" cx="480" cy="320" rx="70" ry="28"/>
+        <text class="text underline" x="480" y="320">原始病历ID</text>
+        <line class="line" x1="545" y1="475" x2="530" y2="345"/>
+        
+        <!-- 记录类型 -->
+        <ellipse class="attribute" cx="720" cy="320" rx="55" ry="28"/>
+        <text class="text" x="720" y="320">记录类型</text>
+        <line class="line" x1="655" y1="475" x2="680" y2="345"/>
+        
+        <!-- 备注 -->
+        <ellipse class="attribute" cx="360" cy="360" rx="40" ry="28"/>
+        <text class="text" x="360" y="360">备注</text>
+        <line class="line" x1="525" y1="480" x2="395" y2="380"/>
+        
+        <!-- 创建时间 -->
+        <ellipse class="attribute" cx="840" cy="360" rx="55" ry="28"/>
+        <text class="text" x="840" y="360">创建时间</text>
+        <line class="line" x1="670" y1="480" x2="795" y2="380"/>
+        
+        <!-- 左上角属性组 -->
+        <!-- 医生ID -->
+        <ellipse class="key-attribute" cx="280" cy="440" rx="50" ry="28"/>
+        <text class="text underline" x="280" y="440">医生ID</text>
+        <line class="line" x1="520" y1="490" x2="330" y2="455"/>
+        
+        <!-- 医生姓名 -->
+        <ellipse class="attribute" cx="220" cy="530" rx="55" ry="28"/>
+        <text class="text" x="220" y="530">医生姓名</text>
+        <line class="line" x1="520" y1="505" x2="275" y2="540"/>
+        
+        <!-- 医生职称 -->
+        <ellipse class="attribute" cx="240" cy="630" rx="55" ry="28"/>
+        <text class="text" x="240" y="630">医生职称</text>
+        <line class="line" x1="525" y1="520" x2="290" y2="615"/>
+        
+        <!-- 左侧属性组 -->
+        <!-- 科室 -->
+        <ellipse class="attribute" cx="330" cy="710" rx="40" ry="28"/>
+        <text class="text" x="330" y="710">科室</text>
+        <line class="line" x1="540" y1="528" x2="365" y2="690"/>
+        
+        <!-- 医院名称 -->
+        <ellipse class="attribute" cx="440" cy="760" rx="55" ry="28"/>
+        <text class="text" x="440" y="760">医院名称</text>
+        <line class="line" x1="565" y1="528" x2="485" y2="735"/>
+        
+        <!-- 底部属性组 -->
+        <!-- 组织ID -->
+        <ellipse class="key-attribute" cx="560" cy="790" rx="50" ry="28"/>
+        <text class="text underline" x="560" y="790">组织ID</text>
+        <line class="line" x1="595" y1="530" x2="570" y2="762"/>
+        
+        <!-- 组织名称 -->
+        <ellipse class="attribute" cx="680" cy="780" rx="55" ry="28"/>
+        <text class="text" x="680" y="780">组织名称</text>
+        <line class="line" x1="625" y1="528" x2="660" y2="755"/>
+        
+        <!-- 右下角属性组 -->
+        <!-- 症状描述 -->
+        <ellipse class="attribute" cx="790" cy="730" rx="55" ry="28"/>
+        <text class="text" x="790" y="730">症状描述</text>
+        <line class="line" x1="660" y1="520" x2="745" y2="710"/>
+        
+        <!-- 诊断 -->
+        <ellipse class="attribute" cx="880" cy="660" rx="40" ry="28"/>
+        <text class="text" x="880" y="660">诊断</text>
+        <line class="line" x1="675" y1="510" x2="845" y2="645"/>
+        
+        <!-- 是否只读 -->
+        <ellipse class="attribute" cx="940" cy="570" rx="55" ry="28"/>
+        <text class="text" x="940" y="570">是否只读</text>
+        <line class="line" x1="680" y1="500" x2="890" y2="580"/>
+        
+        <!-- 右侧属性组 -->
+        <!-- 创建者MSPID -->
+        <ellipse class="attribute" cx="960" cy="470" rx="70" ry="28"/>
+        <text class="text" x="960" y="470">创建者MSPID</text>
+        <line class="line" x1="680" y1="490" x2="895" y2="480"/>
+        
+        <!-- 交易ID -->
+        <ellipse class="key-attribute" cx="963" cy="356" rx="50" ry="28"/>
+        <text class="text underline" x="963" y="356">交易ID</text>
+        <line class="line" x1="675" y1="480" x2="918" y2="371"/>
+        
+        <!-- 右上角属性组 -->
+        <!-- 医嘱 -->
+        <ellipse class="attribute" cx="872" cy="228" rx="40" ry="28"/>
+        <text class="text" x="872" y="228">医嘱</text>
+        <line class="line" x1="665" y1="475" x2="837" y2="248"/>
+        
+        <!-- 处方药品（多值属性） -->
+        <ellipse class="multi-attribute" cx="1087" cy="350" rx="55" ry="28" stroke-width="3"/>
+        <ellipse class="multi-attribute" cx="1087" cy="350" rx="50" ry="23" stroke-width="1.5"/>
+        <text class="text" x="1087" y="350">处方药品</text>
+        <line class="line" x1="670" y1="475" x2="1040" y2="372"/>
+        
+        <!-- 治疗方案 -->
+        <ellipse class="attribute" cx="1075" cy="403" rx="55" ry="28"/>
+        <text class="text" x="1075" y="403">治疗方案</text>
+        <line class="line" x1="680" y1="485" x2="1025" y2="418"/>
+        
+        <!-- 图例 -->
+        <g transform="translate(50, 900)">
+            <text class="text" x="0" y="0" text-anchor="start" style="font-size: 13px; font-weight: bold;">图例：</text>
+            <g transform="translate(60, 30)">
+                <rect class="weak-entity" x="-25" y="-15" width="50" height="30" rx="3"/>
+                <rect class="entity" x="-20" y="-10" width="40" height="20" rx="3"/>
+                <text class="text" x="0" y="0" style="font-size: 11px;">弱实体</text>
+            </g>
+            <ellipse class="key-attribute" cx="180" cy="30" rx="35" ry="20"/>
+            <text class="text underline" x="180" y="30" style="font-size: 12px;">主键</text>
+            <g transform="translate(280, 30)">
+                <ellipse class="multi-attribute" cx="0" cy="0" rx="35" ry="20" stroke-width="2.5"/>
+                <ellipse class="multi-attribute" cx="0" cy="0" rx="30" ry="15" stroke-width="1.5"/>
+                <text class="text" x="0" y="0" style="font-size: 11px;">多值</text>
+            </g>
+        </g>
+    </svg>
+</body>
+</html>

@@ -1,0 +1,75 @@
+@startuml 患者端功能结构图
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontSize 12
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #2C3E50
+    BorderThickness 2
+    RoundCorner 10
+    FontColor #2C3E50
+    FontStyle bold
+}
+
+skinparam package {
+    BackgroundColor #EBF3FD
+    BorderColor #3498DB
+    BorderThickness 3
+    RoundCorner 15
+    FontColor #2C3E50
+    FontSize 16
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #34495E
+    Thickness 2
+}
+
+top to bottom direction
+
+package "基于区块链的社区医疗管理信息系统\n(患者端)" as PatientSystem {
+    
+    rectangle "登录注册\n🔐" as Login #E8F5E8
+    rectangle "查看病历详情\n📋" as ViewPrescription #FFF2E8
+    rectangle "查看个人信息\n👤" as ViewProfile #E8F0FF
+    rectangle "申请授权访问\n🔑" as RequestAccess #FFE8F0
+    rectangle "查看药品订单\n💊" as ViewOrder #F0E8FF
+    
+}
+
+' 第二层功能模块
+rectangle "用户\n注册" as Register #F1F8E9
+rectangle "角色\n选择" as RoleSelect #F1F8E9
+
+rectangle "病历\n列表" as PrescList #FFF8F1
+rectangle "病历\n详情" as PrescDetail #FFF8F1
+
+rectangle "个人\n信息" as PersonalInfo #F1F5FF
+rectangle "健康\n档案" as HealthRecord #F1F5FF
+
+rectangle "授权\n申请" as AuthRequest #FFF1F5
+rectangle "批准\n授权" as ApproveAuth #FFF1F5
+
+rectangle "订单\n列表" as OrderList #F8F1FF
+rectangle "订单\n详情" as OrderDetail #F8F1FF
+
+' 连接线
+Login ||--|| Register
+Login ||--|| RoleSelect
+
+ViewPrescription ||--|| PrescList
+ViewPrescription ||--|| PrescDetail
+
+ViewProfile ||--|| PersonalInfo
+ViewProfile ||--|| HealthRecord
+
+RequestAccess ||--|| AuthRequest
+RequestAccess ||--|| ApproveAuth
+
+ViewOrder ||--|| OrderList
+ViewOrder ||--|| OrderDetail
+
+@enduml

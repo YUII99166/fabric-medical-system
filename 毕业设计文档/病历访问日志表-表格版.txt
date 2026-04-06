@@ -1,0 +1,18 @@
+字段名	描述	字段类型	是否为空	主键/外键
+id	自增ID	BIGINT	否	主键
+log_id	日志ID（区块链ID）	VARCHAR(100)	否	
+prescription_id	病历ID	VARCHAR(100)	否	外键
+prescription_no	病历编号	VARCHAR(100)	否	
+patient_id	患者ID	VARCHAR(100)	否	外键
+patient_name	患者姓名	VARCHAR(100)	否	
+accessor_id	访问者ID	VARCHAR(100)	否	外键
+accessor_name	访问者姓名	VARCHAR(100)	否	
+accessor_role	访问者角色	VARCHAR(50)	否	
+accessor_organization	访问者组织MSPID	VARCHAR(100)	是	
+accessor_organization_name	访问者组织名称	VARCHAR(200)	是	
+access_type	访问类型（view/edit/download）	VARCHAR(50)	否	
+access_reason	访问原因	VARCHAR(500)	是	
+ip_address	IP地址	VARCHAR(50)	是	
+user_agent	用户代理	TEXT	是	
+tx_id	区块链交易ID	VARCHAR(100)	是	
+accessed_at	访问时间	TIMESTAMP	否	

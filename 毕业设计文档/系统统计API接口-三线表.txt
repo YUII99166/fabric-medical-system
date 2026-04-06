@@ -1,0 +1,5 @@
+系统统计API接口
+
+接口名称	请求方法	请求路径	功能描述
+查询系统统计	GET	/statistics/overview	查询系统整体统计数据
+查询最近活动	GET	/statistics/activities	查询系统最近活动记录

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录流程图</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #canvas-container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        canvas {
+            display: block;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="flowCanvas" width="700" height="900"></canvas>
+    </div>
+    <div class="controls">
+        <button onclick="downloadImage()">下载为PNG图片</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('flowCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 绘制圆角矩形
+        function drawRoundRect(x, y, width, height, radius, fillColor, strokeColor) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制椭圆
+        function drawOval(x, y, width, height, fillColor, strokeColor) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(x, y, width/2, height/2, 0, 0, 2 * Math.PI);
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制菱形
+        function drawDiamond(x, y, width, height, fillColor, strokeColor) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x, y - height/2);
+            ctx.lineTo(x + width/2, y);
+            ctx.lineTo(x, y + height/2);
+            ctx.lineTo(x - width/2, y);
+            ctx.closePath();
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制直线箭头（支持多点折线）
+        function drawArrow(...points) {
+            ctx.save();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            // 绘制折线
+            ctx.moveTo(points[0], points[1]);
+            for (let i = 2; i < points.length; i += 2) {
+                ctx.lineTo(points[i], points[i + 1]);
+            }
+            ctx.stroke();
+
+            // 在最后一段线上绘制箭头
+            const lastX1 = points[points.length - 4];
+            const lastY1 = points[points.length - 3];
+            const lastX2 = points[points.length - 2];
+            const lastY2 = points[points.length - 1];
+            
+            const angle = Math.atan2(lastY2 - lastY1, lastX2 - lastX1);
+            const arrowLength = 10;
+            ctx.beginPath();
+            ctx.moveTo(lastX2, lastY2);
+            ctx.lineTo(lastX2 - arrowLength * Math.cos(angle - Math.PI / 6), 
+                       lastY2 - arrowLength * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(lastX2, lastY2);
+            ctx.lineTo(lastX2 - arrowLength * Math.cos(angle + Math.PI / 6), 
+                       lastY2 - arrowLength * Math.sin(angle + Math.PI / 6));
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        // 绘制直线（不带箭头）
+        function drawLine(...points) {
+            ctx.save();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(points[0], points[1]);
+            for (let i = 2; i < points.length; i += 2) {
+                ctx.lineTo(points[i], points[i + 1]);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制文本
+        function drawText(text, x, y, fontSize = 14, align = 'center') {
+            ctx.save();
+            ctx.fillStyle = '#000';
+            ctx.font = `${fontSize}px Microsoft YaHei`;
+            ctx.textAlign = align;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, x, y);
+            ctx.restore();
+        }
+
+        // 绘制多行文本
+        function drawMultiLineText(lines, x, y, fontSize = 14, lineHeight = 20) {
+            lines.forEach((line, index) => {
+                drawText(line, x, y + index * lineHeight, fontSize);
+            });
+        }
+
+        // 开始绘制流程图
+        function drawFlowchart() {
+            const centerX = 350;
+            let y = 50;
+
+            // 1. 开始（椭圆）
+            drawOval(centerX, y, 80, 40, '#fff', '#000');
+            drawText('开始', centerX, y);
+            y += 40;
+
+            // 箭头
+            drawArrow(centerX, y, centerX, y + 30);
+            y += 30;
+
+            // 2. 用户输入账号密码
+            drawRoundRect(centerX - 60, y, 120, 50, 5, '#fff', '#000');
+            drawMultiLineText(['用户输入', '账号密码'], centerX, y + 25, 14, 18);
+            y += 50;
+
+            // 箭头
+            drawArrow(centerX, y, centerX, y + 30);
+            y += 30;
+
+            // 3. 发送请求
+            drawRoundRect(centerX - 60, y, 120, 40, 5, '#fff', '#000');
+            drawText('发送请求', centerX, y + 20);
+            y += 40;
+
+            // 箭头
+            drawArrow(centerX, y, centerX, y + 30);
+            y += 30;
+
+            // 4. 账号密码正确？（菱形）
+            drawDiamond(centerX, y + 30, 100, 60, '#fff', '#000');
+            drawMultiLineText(['账号', '密码', '正确？'], centerX, y + 30, 12, 16);
+            
+            // "否"分支 - 向右（改为直线）
+            const rightBranchX = centerX + 50;
+            const rightBoxX = centerX + 120;
+            drawLine(rightBranchX, y + 30, rightBoxX, y + 30);
+            drawArrow(rightBoxX, y + 30, rightBoxX, y + 10);
+            drawText('否', centerX + 70, y + 20, 12);
+            drawRoundRect(rightBoxX, y + 10, 80, 40, 5, '#fff', '#000');
+            drawText('用户重新输入', rightBoxX + 40, y + 30, 12);
+            
+            // 从"用户重新输入"返回到顶部的箭头（改为直线）
+            const returnX = rightBoxX + 40;
+            const returnTopY = 80;
+            drawLine(returnX, y + 10, returnX, returnTopY);
+            drawLine(returnX, returnTopY, centerX + 60, returnTopY);
+            drawArrow(centerX + 60, returnTopY, centerX + 60, 80);
+
+            // "是"分支 - 向下
+            drawText('是', centerX + 10, y + 60, 12);
+            y += 60;
+            drawArrow(centerX, y, centerX, y + 40);
+            y += 40;
+
+            // 5. 进入主页面
+            drawRoundRect(centerX - 60, y, 120, 40, 5, '#fff', '#000');
+            drawText('进入主页面', centerX, y + 20);
+            y += 40;
+
+            // 箭头向下到分支点
+            drawArrow(centerX, y, centerX, y + 30);
+            y += 30;
+
+            // 分支点 - 5个功能模块
+            const branchY = y;
+            const moduleWidth = 100;
+            const moduleHeight = 50;
+            const spacing = 120;
+            const startX = centerX - spacing * 2;
+
+            // 绘制5个主功能模块
+            const modules = [
+                { name: '查看\n病历', subModules: ['用户查看', '病历信息'] },
+                { name: '查看授权\n请求', subModules: ['查看授权', '请求列表'] },
+                { name: '查看个人\n信息', subModules: ['个人信息', '修改密码'] },
+                { name: '查看药品\n订单', subModules: ['查看订单', '增加订单'] },
+                { name: '查看药品\n统计', subModules: ['查看统计', '订单详情'] }
+            ];
+
+            modules.forEach((module, index) => {
+                const moduleX = startX + index * spacing;
+                
+                // 从中心点到模块的连线 - 改为直线（先向下，再横向，再向下）
+                const branchPointY = branchY + 20;
+                drawLine(centerX, branchY, centerX, branchPointY);
+                drawLine(centerX, branchPointY, moduleX + moduleWidth/2, branchPointY);
+                drawArrow(moduleX + moduleWidth/2, branchPointY, moduleX + moduleWidth/2, branchY + 50);
+                
+                // 主功能模块
+                drawRoundRect(moduleX, branchY + 50, moduleWidth, moduleHeight, 5, '#fff', '#000');
+                const lines = module.name.split('\n');
+                drawMultiLineText(lines, moduleX + moduleWidth/2, branchY + 75, 12, 18);
+                
+                // 子功能模块
+                const subY = branchY + 50 + moduleHeight + 30;
+                const subWidth = 80;
+                const subHeight = 40;
+                const subSpacing = 90;
+                const subStartX = moduleX + moduleWidth/2 - subSpacing/2 - subWidth/2;
+                
+                // 从主模块到子模块的连线 - 改为直线
+                const splitY = branchY + 50 + moduleHeight + 15;
+                drawLine(moduleX + moduleWidth/2, branchY + 50 + moduleHeight, 
+                         moduleX + moduleWidth/2, splitY);
+                
+                // 左右两个子模块
+                module.subModules.forEach((subModule, subIndex) => {
+                    const subX = subStartX + subIndex * subSpacing;
+                    
+                    // 连线到子模块 - 改为直线
+                    drawLine(moduleX + moduleWidth/2, splitY, subX + subWidth/2, splitY);
+                    drawArrow(subX + subWidth/2, splitY, subX + subWidth/2, subY);
+                    
+                    drawRoundRect(subX, subY, subWidth, subHeight, 5, '#fff', '#000');
+                    drawText(subModule, subX + subWidth/2, subY + subHeight/2, 11);
+                    
+                    // 从子模块到结束的连线 - 改为直线
+                    const convergeY = branchY + 250;
+                    drawLine(subX + subWidth/2, subY + subHeight, 
+                            subX + subWidth/2, convergeY);
+                });
+            });
+
+            // 汇聚到结束 - 改为直线
+            const endY = branchY + 250;
+            const convergeY = endY + 15;
+            
+            // 从各个子模块汇聚到中心点
+            modules.forEach((module, index) => {
+                const moduleX = startX + index * spacing;
+                const subSpacing = 90;
+                const subWidth = 80;
+                const subStartX = moduleX + moduleWidth/2 - subSpacing/2 - subWidth/2;
+                
+                // 左子模块
+                drawLine(subStartX + subWidth/2, endY, 
+                        subStartX + subWidth/2, convergeY,
+                        centerX, convergeY);
+                
+                // 右子模块
+                drawLine(subStartX + subSpacing + subWidth/2, endY,
+                        subStartX + subSpacing + subWidth/2, convergeY,
+                        centerX, convergeY);
+            });
+            
+            // 从汇聚点到结束
+            drawArrow(centerX, convergeY, centerX, endY + 50 - 20);
+
+            // 结束（椭圆）
+            drawOval(centerX, endY + 50, 80, 40, '#fff', '#000');
+            drawText('结束', centerX, endY + 50);
+        }
+
+        // 下载图片
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = '用户登录流程图.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // 绘制流程图
+        drawFlowchart();
+    </script>
+</body>
+</html>

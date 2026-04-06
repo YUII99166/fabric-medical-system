@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>区块链架构图</title>
+<style>
+body { margin: 20px; background: #f0f0f0; font-family: SimSun, serif; }
+#wrap { background: white; padding: 30px; display: inline-block; }
+button { margin: 10px 5px; padding: 8px 16px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c" width="1200" height="800"></canvas>
+</div>
+<div>
+<button onclick="save()">下载图片</button>
+<button onclick="copy()">复制</button>
+</div>
+<script>
+const c = document.getElementById('c');
+const g = c.getContext('2d', { alpha: false });
+
+g.imageSmoothingEnabled = false;
+g.fillStyle = '#fef8e8';
+g.fillRect(0, 0, 1200, 800);
+
+function box(x, y, w, h, dash, fillColor, strokeColor) {
+    g.save();
+    g.fillStyle = fillColor || 'white';
+    g.strokeStyle = strokeColor || 'black';
+    g.lineWidth = 2;
+    if (dash) g.setLineDash([5, 5]);
+    g.beginPath();
+    const r = 10;
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    g.restore();
+}
+
+function txt(s, x, y) {
+    g.save();
+    g.fillStyle = 'black';
+    g.font = 'normal 16px SimSun';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    const px = Math.round(x);
+    const py = Math.round(y);
+    g.fillText(s, px, py);
+    g.restore();
+}
+
+function arrow(x1, y1, x2, y2, dash, color) {
+    g.save();
+    g.strokeStyle = color || 'black';
+    g.fillStyle = color || 'black';
+    g.lineWidth = 2;
+    if (dash) g.setLineDash([8, 8]);
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    g.setLineDash([]);
+    g.beginPath();
+    g.moveTo(x2, y2);
+    g.lineTo(x2 - 10 * Math.cos(a - 0.5), y2 - 10 * Math.sin(a - 0.5));
+    g.lineTo(x2 - 10 * Math.cos(a + 0.5), y2 - 10 * Math.sin(a + 0.5));
+    g.closePath();
+    g.fill();
+    g.restore();
+}
+
+box(200, 20, 580, 90, false, '#b3e5fc', '#0288d1');
+txt('Hyperledger Fabric 联盟链网络', 490, 48);
+txt('appchannel（应用通道）', 490, 70);
+txt('共享账本数据 | 执行智能合约 | 多机构协同', 490, 92);
+
+box(850, 20, 250, 90, false, '#ffcdd2', '#d32f2f');
+txt('排序服务', 975, 43);
+txt('orderer.qq.com', 975, 62);
+txt('Raft 共识算法', 975, 78);
+txt('交易排序 | 区块生成 | 账本同步', 975, 95);
+
+arrow(780, 65, 840, 65, false, '#ff6b6b');
+arrow(840, 65, 780, 65, false, '#ff6b6b');
+
+box(310, 170, 250, 170, false, '#ffe0b2', '#f57c00');
+txt('RegCenterMSP - 监管中心', 435, 195);
+txt('数据监管 | 审核准入 | 合规监督', 435, 218);
+txt('peer0.regcenter.com（主节点）', 435, 245);
+txt('peer1.regcenter.com（备节点）', 435, 265);
+txt('监管审核 | 数据监管', 435, 290);
+txt('交易审查 | 高可用', 435, 310);
+
+box(620, 170, 210, 175, true, '#fff3e0', '#ff9800');
+txt('背书策略', 725, 190);
+txt('OutOf(3,', 725, 215);
+txt('  \'TaobaoMSP.member\',', 725, 233);
+txt('  \'JDMSP.member\',', 725, 251);
+txt('  \'WenjinMSP.member\',', 725, 269);
+txt('  \'RegCenterMSP.member\')', 725, 287);
+txt('4个组织中至少3个背书', 725, 320);
+txt('保证安全性和可信度', 725, 335);
+
+arrow(490, 110, 435, 160, false, '#ff9800');
+arrow(540, 110, 725, 160, true, '#ff9800');
+
+box(40, 410, 250, 170, false, '#bbdefb', '#1976d2');
+txt('TaobaoMSP - 协和医院', 165, 435);
+txt('开展病历管理', 165, 455);
+txt('peer0.taobao.com（主节点）', 165, 475);
+txt('peer1.taobao.com（备节点）', 165, 490);
+txt('病历存储 | 智能诊断', 165, 515);
+txt('交易背书 | 高可用', 165, 535);
+
+box(330, 410, 250, 170, false, '#ce93d8', '#8e24aa');
+txt('JDMSP - 301医院', 455, 435);
+txt('开展病历管理', 455, 455);
+txt('peer0.jd.com（主节点）', 455, 475);
+txt('peer1.jd.com（备节点）', 455, 490);
+txt('病历存储 | 智能诊断', 455, 515);
+txt('交易背书 | 高可用', 455, 535);
+
+box(620, 410, 250, 170, false, '#a5d6a7', '#388e3c');
+txt('WenjinMSP - 温江社区医疗中心', 745, 435);
+txt('开展基层医疗', 745, 455);
+txt('peer0.wenjin.com（主节点）', 745, 475);
+txt('peer1.wenjin.com（备节点）', 745, 490);
+txt('病历存储 | 智能诊断', 745, 515);
+txt('交易背书 | 高可用', 745, 535);
+
+arrow(370, 340, 165, 400, false, '#2196f3');
+arrow(435, 340, 455, 400, false, '#9c27b0');
+arrow(500, 340, 745, 400, false, '#4caf50');
+
+box(900, 410, 300, 230, false, '#ffebee', '#d32f2f');
+txt('待接入组织（审核中）', 1050, 445);
+txt('InsuranceMSP-温江人寿', 1050, 480);
+txt('peer.insurance.com', 1050, 505);
+txt('CDUTCMMSP-成都中医药大学-第二附属医院', 1050, 540);
+txt('peer.cdutcm.com', 1050, 565);
+txt('DrugRegMSP-四川省中医药管理局', 1050, 600);
+txt('peer.scda.gov.cn', 1050, 625);
+
+arrow(530, 340, 1050, 400, true, '#d32f2f');
+
+function save() {
+    const scale = 3;
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = c.width * scale;
+    tempCanvas.height = c.height * scale;
+    const tempCtx = tempCanvas.getContext('2d', { alpha: false });
+    tempCtx.scale(scale, scale);
+    tempCtx.drawImage(c, 0, 0);
+    
+    const a = document.createElement('a');
+    a.download = '区块链架构图.png';
+    a.href = tempCanvas.toDataURL('image/png', 1.0);
+    a.click();
+}
+
+async function copy() {
+    try {
+        const scale = 3;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = c.width * scale;
+        tempCanvas.height = c.height * scale;
+        const tempCtx = tempCanvas.getContext('2d', { alpha: false });
+        tempCtx.scale(scale, scale);
+        tempCtx.drawImage(c, 0, 0);
+        
+        const b = await new Promise(r => tempCanvas.toBlob(r, 'image/png', 1.0));
+        await navigator.clipboard.write([new ClipboardItem({'image/png': b})]);
+        alert('已复制');
+    } catch(e) {
+        alert('复制失败');
+    }
+}
+</script>
+</body>
+</html>

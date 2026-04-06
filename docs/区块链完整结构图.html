@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>区块链完整结构图</title>
+<style>
+body {
+  margin: 0;
+  padding: 20px;
+  background: white;
+  font-family: 'Times New Roman', 'SimSun', serif;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+}
+h1 {
+  text-align: center;
+  color: #000;
+  font-size: 24px;
+  margin-bottom: 40px;
+  font-weight: normal;
+}
+svg {
+  display: block;
+  margin: 0 auto;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>图 X-X 区块链结构示意图</h1>
+
+<svg width="1100" height="900" xmlns="http://www.w3.org/2000/svg">
+  
+  <!-- 上半部分：单个区块结构 -->
+  <text x="550" y="30" font-size="20" font-weight="bold" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">区块结构</text>
+  
+  <!-- 区块外框 -->
+  <rect x="200" y="60" width="700" height="380" rx="0" fill="white" stroke="#000" stroke-width="2.5"/>
+  
+  <!-- 区块标题 -->
+  <text x="550" y="95" font-size="22" font-weight="bold" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">区块 N</text>
+  <line x1="200" y1="110" x2="900" y2="110" stroke="#000" stroke-width="2"/>
+
+  <!-- 区块头 -->
+  <rect x="230" y="135" width="640" height="85" rx="0" fill="white" stroke="#000" stroke-width="1.5"/>
+  <text x="250" y="162" font-size="19" font-weight="bold" fill="#000" font-family="Times New Roman, SimSun">区块头</text>
+  <line x1="230" y1="172" x2="870" y2="172" stroke="#000" stroke-width="1"/>
+  <text x="270" y="200" font-size="16" fill="#000" font-family="Times New Roman, SimSun">区块号、前区块哈希、数据哈希、时间戳</text>
+
+  <!-- 区块数据 -->
+  <rect x="230" y="240" width="640" height="140" rx="0" fill="white" stroke="#000" stroke-width="1.5"/>
+  <text x="250" y="267" font-size="19" font-weight="bold" fill="#000" font-family="Times New Roman, SimSun">区块数据</text>
+  <line x1="230" y1="277" x2="870" y2="277" stroke="#000" stroke-width="1"/>
+  
+  <!-- 交易列表 -->
+  <rect x="260" y="295" width="160" height="55" rx="0" fill="white" stroke="#000" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="340" y="328" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">交易 1</text>
+  
+  <rect x="440" y="295" width="160" height="55" rx="0" fill="white" stroke="#000" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="520" y="328" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">交易 2</text>
+  
+  <rect x="620" y="295" width="160" height="55" rx="0" fill="white" stroke="#000" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="700" y="328" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">交易 m</text>
+  
+  <text x="550" y="370" font-size="15" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">包含多笔交易记录</text>
+
+  <!-- 区块元数据 -->
+  <rect x="230" y="400" width="640" height="30" rx="0" fill="white" stroke="#000" stroke-width="1.5"/>
+  <text x="250" y="422" font-size="19" font-weight="bold" fill="#000" font-family="Times New Roman, SimSun">区块元数据</text>
+  <text x="400" y="422" font-size="16" fill="#000" font-family="Times New Roman, SimSun">(签名、验证结果)</text>
+
+  <!-- 分隔线 -->
+  <line x1="100" y1="480" x2="1000" y2="480" stroke="#000" stroke-width="1" stroke-dasharray="5,5"/>
+
+  <!-- 下半部分：链式连接 -->
+  <text x="550" y="530" font-size="20" font-weight="bold" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">链式连接结构</text>
+
+  <!-- Block N-1 -->
+  <rect x="80" y="580" width="200" height="120" rx="0" fill="white" stroke="#000" stroke-width="2"/>
+  <text x="180" y="620" font-size="20" font-weight="bold" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">区块 N-1</text>
+  <line x1="80" y1="635" x2="280" y2="635" stroke="#000" stroke-width="1"/>
+  <text x="180" y="660" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">区块号: N-1</text>
+  <text x="180" y="685" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">哈希值: H(N-1)</text>
+
+  <!-- Arrow 1 -->
+  <line x1="290" y1="640" x2="360" y2="640" stroke="#000" stroke-width="3" marker-end="url(#arrow)"/>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="3" orient="auto">
+      <polygon points="0 0, 12 3, 0 6" fill="#000" />
+    </marker>
+  </defs>
+  <text x="325" y="625" font-size="14" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">前区块哈希</text>
+
+  <!-- Block N (Current) -->
+  <rect x="370" y="580" width="200" height="120" rx="0" fill="white" stroke="#000" stroke-width="3"/>
+  <text x="470" y="620" font-size="20" font-weight="bold" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">区块 N</text>
+  <line x1="370" y1="635" x2="570" y2="635" stroke="#000" stroke-width="1"/>
+  <text x="470" y="660" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">区块号: N</text>
+  <text x="470" y="685" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">哈希值: H(N)</text>
+
+  <!-- Arrow 2 -->
+  <line x1="580" y1="640" x2="650" y2="640" stroke="#000" stroke-width="3" marker-end="url(#arrow2)"/>
+  <defs>
+    <marker id="arrow2" markerWidth="12" markerHeight="12" refX="10" refY="3" orient="auto">
+      <polygon points="0 0, 12 3, 0 6" fill="#000" />
+    </marker>
+  </defs>
+  <text x="615" y="625" font-size="14" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">前区块哈希</text>
+
+  <!-- Block N+1 -->
+  <rect x="660" y="580" width="200" height="120" rx="0" fill="white" stroke="#000" stroke-width="2"/>
+  <text x="760" y="620" font-size="20" font-weight="bold" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">区块 N+1</text>
+  <line x1="660" y1="635" x2="860" y2="635" stroke="#000" stroke-width="1"/>
+  <text x="760" y="660" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">区块号: N+1</text>
+  <text x="760" y="685" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">哈希值: H(N+1)</text>
+
+  <!-- Arrow 3 -->
+  <line x1="870" y1="640" x2="940" y2="640" stroke="#000" stroke-width="3" marker-end="url(#arrow3)"/>
+  <defs>
+    <marker id="arrow3" markerWidth="12" markerHeight="12" refX="10" refY="3" orient="auto">
+      <polygon points="0 0, 12 3, 0 6" fill="#000" />
+    </marker>
+  </defs>
+  <text x="905" y="625" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">...</text>
+
+  <!-- 说明文字 -->
+  <text x="550" y="750" font-size="17" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">每个区块通过前区块哈希字段指向前一个区块，形成不可篡改的链式结构</text>
+
+  <!-- 防篡改说明 -->
+  <rect x="150" y="790" width="800" height="80" rx="5" fill="#f9f9f9" stroke="#666" stroke-width="1"/>
+  <text x="550" y="820" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">防篡改原理：任何对历史区块的修改都会导致该区块哈希值改变，</text>
+  <text x="550" y="845" font-size="16" fill="#000" text-anchor="middle" font-family="Times New Roman, SimSun">进而导致后续所有区块的前区块哈希失配，篡改行为立即被检测到</text>
+
+</svg>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>系统功能结构设计图</title>
+<style>
+body { margin: 20px; background: #f0f0f0; font-family: SimSun, serif; }
+#wrap { background: white; padding: 30px; display: inline-block; }
+button { margin: 10px 5px; padding: 8px 16px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c" width="2500" height="1500"></canvas>
+</div>
+<div>
+<button onclick="save()">下载图片</button>
+<button onclick="copy()">复制</button>
+</div>
+<script>
+const c = document.getElementById('c');
+const g = c.getContext('2d', { alpha: false });
+
+g.imageSmoothingEnabled = false;
+g.fillStyle = '#fef8e8';
+g.fillRect(0, 0, 2500, 1500);
+
+const s = 2.5;
+
+function box(x, y, w, h, fillColor, strokeColor) {
+    g.save();
+    g.fillStyle = fillColor;
+    g.strokeStyle = strokeColor;
+    g.lineWidth = 3;
+    g.beginPath();
+    const r = 8;
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    g.restore();
+}
+
+function txt(s, x, y, size) {
+    g.fillStyle = 'black';
+    g.font = 'normal ' + size + 'px SimSun';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(s, x, y);
+}
+
+function line(x1, y1, x2, y2) {
+    g.strokeStyle = 'black';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+}
+
+box(300*s, 30*s, 400*s, 50*s, '#b3e5fc', '#0288d1');
+txt('基于区块链的社区医疗管理信息系统', 500*s, 55*s, 17*s);
+
+const modules = [
+    {name: '患者端', x: 100, y: 150, color: '#bbdefb', stroke: '#1976d2'},
+    {name: '医生端', x: 300, y: 150, color: '#ce93d8', stroke: '#8e24aa'},
+    {name: '药店端', x: 500, y: 150, color: '#a5d6a7', stroke: '#388e3c'},
+    {name: '管理员端', x: 700, y: 150, color: '#ffcdd2', stroke: '#d32f2f'}
+];
+
+modules.forEach(m => {
+    line(500*s, 80*s, (m.x + 50)*s, 150*s);
+    box(m.x*s, m.y*s, 100*s, 40*s, m.color, m.stroke);
+    txt(m.name, (m.x + 50)*s, (m.y + 20)*s, 17*s);
+});
+
+const patientFuncs = ['登录注册', '查看病历详情', '查看个人信息', '申请授权访问', '查看药品订单'];
+patientFuncs.forEach((f, i) => {
+    const y = 250 + i * 60;
+    line(150*s, 190*s, 150*s, y*s);
+    box(75*s, y*s, 150*s, 40*s, '#e3f2fd', '#1976d2');
+    txt(f, 150*s, (y + 20)*s, 16*s);
+});
+
+const doctorFuncs = ['登录注册', '创建病历', '查看病历', '申请跨院授权', '添加补充记录', '搜索病人信息'];
+doctorFuncs.forEach((f, i) => {
+    const y = 250 + i * 60;
+    line(350*s, 190*s, 350*s, y*s);
+    box(275*s, y*s, 150*s, 40*s, '#f3e5f5', '#8e24aa');
+    txt(f, 350*s, (y + 20)*s, 16*s);
+});
+
+const pharmacyFuncs = ['登录注册', '查看药品订单', '创建订单'];
+pharmacyFuncs.forEach((f, i) => {
+    const y = 250 + i * 60;
+    line(550*s, 190*s, 550*s, y*s);
+    box(475*s, y*s, 150*s, 40*s, '#e8f5e9', '#388e3c');
+    txt(f, 550*s, (y + 20)*s, 16*s);
+});
+
+const adminFuncs = ['登录', '查看架构概览', '查看数据统计', '用户管理功能', '查看权限请求'];
+adminFuncs.forEach((f, i) => {
+    const y = 250 + i * 60;
+    line(750*s, 190*s, 750*s, y*s);
+    box(675*s, y*s, 150*s, 40*s, '#ffebee', '#d32f2f');
+    txt(f, 750*s, (y + 20)*s, 16*s);
+});
+
+txt('图 4.3 系统功能结构设计图', 500*s, 580*s, 14*s);
+
+function save() {
+    const scale = 3;
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = c.width * scale;
+    tempCanvas.height = c.height * scale;
+    const tempCtx = tempCanvas.getContext('2d', { alpha: false });
+    tempCtx.scale(scale, scale);
+    tempCtx.drawImage(c, 0, 0);
+    
+    const a = document.createElement('a');
+    a.download = '系统功能结构设计图.png';
+    a.href = tempCanvas.toDataURL('image/png', 1.0);
+    a.click();
+}
+
+async function copy() {
+    try {
+        const scale = 3;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = c.width * scale;
+        tempCanvas.height = c.height * scale;
+        const tempCtx = tempCanvas.getContext('2d', { alpha: false });
+        tempCtx.scale(scale, scale);
+        tempCtx.drawImage(c, 0, 0);
+        
+        const b = await new Promise(r => tempCanvas.toBlob(r, 'image/png', 1.0));
+        await navigator.clipboard.write([new ClipboardItem({'image/png': b})]);
+        alert('已复制');
+    } catch(e) {
+        alert('复制失败');
+    }
+}
+</script>
+</body>
+</html>

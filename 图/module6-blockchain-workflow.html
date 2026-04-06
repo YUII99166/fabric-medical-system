@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>区块链底层服务模块流程图</title>
+<style>
+body { margin: 20px; background: #f0f0f0; font-family: SimSun, serif; }
+#wrap { background: white; padding: 30px; display: inline-block; }
+button { margin: 10px 5px; padding: 8px 16px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c" width="3400" height="3400"></canvas>
+</div>
+<div>
+<button onclick="save()">下载图片</button>
+<button onclick="copy()">复制</button>
+</div>
+<script>
+const c = document.getElementById('c');
+const g = c.getContext('2d', { alpha: false });
+
+g.imageSmoothingEnabled = false;
+g.fillStyle = '#ffffff';
+g.fillRect(0, 0, 3400, 3400);
+
+const GAP = 200;
+
+function box(x, y, w, h) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 2;
+    g.fillRect(x, y, w, h);
+    g.strokeRect(x, y, w, h);
+}
+
+function ellipse(x, y, w, h) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+}
+
+function arrow(x1, y1, x2, y2) {
+    g.strokeStyle = '#000';
+    g.fillStyle = '#000';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    g.beginPath();
+    g.moveTo(x2, y2);
+    g.lineTo(x2 - 10 * Math.cos(a - 0.5), y2 - 10 * Math.sin(a - 0.5));
+    g.lineTo(x2 - 10 * Math.cos(a + 0.5), y2 - 10 * Math.sin(a + 0.5));
+    g.closePath();
+    g.fill();
+}
+
+function txt(s, x, y) {
+    g.fillStyle = '#000';
+    g.font = 'normal 46px SimSun, 宋体, STSong, "Songti SC", serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(s, x, y);
+}
+
+// 左侧列中心X坐标
+const leftX = 600;
+// 右侧列中心X坐标
+const rightX = 2200;
+
+// 左侧列节点
+let leftY = 100;
+
+// 1. 开始
+ellipse(leftX - 130, leftY, 260, 130);
+txt('开始', leftX, leftY + 65);
+leftY += 130 + GAP;
+
+arrow(leftX, leftY - GAP, leftX, leftY);
+
+// 2. 后端接收业务请求
+box(leftX - 320, leftY, 640, 150);
+txt('后端接收业务请求', leftX, leftY + 50);
+txt('(创建病历/授权等)', leftX, leftY + 105);
+leftY += 150 + GAP;
+
+arrow(leftX, leftY - GAP, leftX, leftY);
+
+// 3. 初始化Fabric SDK
+box(leftX - 320, leftY, 640, 150);
+txt('初始化Fabric SDK', leftX, leftY + 50);
+txt('(加载连接配置文件)', leftX, leftY + 105);
+leftY += 150 + GAP;
+
+arrow(leftX, leftY - GAP, leftX, leftY);
+
+// 4. 创建Gateway连接
+box(leftX - 320, leftY, 640, 150);
+txt('创建Gateway连接', leftX, leftY + 50);
+txt('(使用组织身份证书)', leftX, leftY + 105);
+leftY += 150 + GAP;
+
+arrow(leftX, leftY - GAP, leftX, leftY);
+
+// 5. 获取Network和Contract
+box(leftX - 320, leftY, 640, 150);
+txt('获取Network和Contract', leftX, leftY + 50);
+txt('(连接appchannel通道)', leftX, leftY + 105);
+leftY += 150 + GAP;
+
+// 从左侧连接到右侧（使用折线）
+const midX = (leftX + rightX) / 2 + 200; // 向右移动200像素
+arrow(leftX, leftY - GAP, leftX, leftY - GAP/2);
+arrow(leftX, leftY - GAP/2, midX, leftY - GAP/2);
+arrow(midX, leftY - GAP/2, midX, 100 + 65);
+arrow(midX, 100 + 65, rightX - 320, 100 + 65);
+
+// 右侧列节点
+let rightY = 100;
+
+// 6. 调用智能合约函数
+box(rightX - 320, rightY, 640, 150);
+txt('调用智能合约函数', rightX, rightY + 50);
+txt('(SubmitTransaction)', rightX, rightY + 105);
+rightY += 150 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 7. Peer节点执行智能合约
+box(rightX - 320, rightY, 640, 150);
+txt('Peer节点执行智能合约', rightX, rightY + 50);
+txt('(背书策略验证)', rightX, rightY + 105);
+rightY += 150 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 8. Orderer节点排序
+box(rightX - 320, rightY, 640, 150);
+txt('Orderer节点排序', rightX, rightY + 50);
+txt('(Raft共识算法)', rightX, rightY + 105);
+rightY += 150 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 9. 生成新区块
+box(rightX - 320, rightY, 640, 150);
+txt('生成新区块', rightX, rightY + 50);
+txt('(包含交易数据)', rightX, rightY + 105);
+rightY += 150 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 10. 区块广播到各Peer节点
+box(rightX - 320, rightY, 640, 150);
+txt('区块广播到各Peer节点', rightX, rightY + 50);
+txt('(多组织同步)', rightX, rightY + 105);
+rightY += 150 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 11. 返回交易结果
+box(rightX - 320, rightY, 640, 130);
+txt('返回交易结果给后端', rightX, rightY + 65);
+rightY += 130 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 12. 结束
+ellipse(rightX - 130, rightY, 260, 130);
+txt('结束', rightX, rightY + 65);
+
+function save() {
+    const scale = 2;
+    const temp = document.createElement('canvas');
+    temp.width = c.width * scale;
+    temp.height = c.height * scale;
+    const tg = temp.getContext('2d', { alpha: false });
+    tg.imageSmoothingEnabled = false;
+    tg.scale(scale, scale);
+    tg.drawImage(c, 0, 0);
+    
+    const a = document.createElement('a');
+    a.download = '区块链底层服务模块流程图.png';
+    a.href = temp.toDataURL('image/png', 1.0);
+    a.click();
+}
+
+async function copy() {
+    try {
+        const scale = 2;
+        const temp = document.createElement('canvas');
+        temp.width = c.width * scale;
+        temp.height = c.height * scale;
+        const tg = temp.getContext('2d', { alpha: false });
+        tg.imageSmoothingEnabled = false;
+        tg.scale(scale, scale);
+        tg.drawImage(c, 0, 0);
+        
+        const b = await new Promise(r => temp.toBlob(r, 'image/png', 1.0));
+        await navigator.clipboard.write([new ClipboardItem({'image/png': b})]);
+        alert('已复制');
+    } catch(e) {
+        alert('复制失败');
+    }
+}
+</script>
+</body>
+</html>

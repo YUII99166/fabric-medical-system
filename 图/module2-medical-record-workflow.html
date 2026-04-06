@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>病历管理模块流程图</title>
+<style>
+body { margin: 20px; background: #f0f0f0; font-family: SimSun, serif; }
+#wrap { background: white; padding: 30px; display: inline-block; }
+button { margin: 10px 5px; padding: 8px 16px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c" width="3400" height="3400"></canvas>
+</div>
+<div>
+<button onclick="save()">下载图片</button>
+<button onclick="copy()">复制</button>
+</div>
+<script>
+const c = document.getElementById('c');
+const g = c.getContext('2d', { alpha: false });
+
+g.imageSmoothingEnabled = false;
+g.fillStyle = '#ffffff';
+g.fillRect(0, 0, 3400, 3400);
+
+const GAP = 200;
+const centerX = 1700;
+
+function box(x, y, w, h) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 2;
+    g.fillRect(x, y, w, h);
+    g.strokeRect(x, y, w, h);
+}
+
+function ellipse(x, y, w, h) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+}
+
+function diamond(x, y, w, h) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(x + w/2, y);
+    g.lineTo(x + w, y + h/2);
+    g.lineTo(x + w/2, y + h);
+    g.lineTo(x, y + h/2);
+    g.closePath();
+    g.fill();
+    g.stroke();
+}
+
+function arrow(x1, y1, x2, y2) {
+    g.strokeStyle = '#000';
+    g.fillStyle = '#000';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    g.beginPath();
+    g.moveTo(x2, y2);
+    g.lineTo(x2 - 10 * Math.cos(a - 0.5), y2 - 10 * Math.sin(a - 0.5));
+    g.lineTo(x2 - 10 * Math.cos(a + 0.5), y2 - 10 * Math.sin(a + 0.5));
+    g.closePath();
+    g.fill();
+}
+
+function txt(s, x, y) {
+    g.fillStyle = '#000';
+    g.font = 'normal 46px SimSun, 宋体, STSong, "Songti SC", serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(s, x, y);
+}
+
+let y = 100;
+
+// 左侧列中心X坐标
+const leftX = 600;
+// 右侧列中心X坐标
+const rightX = 2200;
+
+// 左侧列节点
+let leftY = y;
+
+// 1. 开始
+ellipse(leftX - 110, leftY, 220, 110);
+txt('开始', leftX, leftY + 55);
+leftY += 110 + GAP;
+
+arrow(leftX, leftY - GAP, leftX, leftY);
+
+// 2. 医生填写病历信息
+box(leftX - 270, leftY, 540, 125);
+txt('医生填写病历信息', leftX, leftY + 45);
+txt('(患者信息、诊断、处方等)', leftX, leftY + 90);
+leftY += 125 + GAP;
+
+arrow(leftX, leftY - GAP, leftX, leftY);
+
+// 3. 前端表单验证
+box(leftX - 220, leftY, 440, 110);
+txt('前端表单验证', leftX, leftY + 55);
+leftY += 110 + GAP;
+
+arrow(leftX, leftY - GAP, leftX, leftY);
+
+// 4. 提交病历数据到后端服务
+box(leftX - 270, leftY, 540, 110);
+txt('提交病历数据到后端服务', leftX, leftY + 55);
+const submitY = leftY;
+leftY += 110 + GAP;
+
+arrow(leftX, leftY - GAP, leftX, leftY);
+
+// 5. 后端验证数据完整性
+box(leftX - 270, leftY, 540, 110);
+txt('后端验证数据完整性', leftX, leftY + 55);
+leftY += 110 + GAP;
+
+// 从左侧连接到右侧（使用折线）
+const midX = (leftX + rightX) / 2;
+arrow(leftX, leftY - GAP, leftX, leftY - GAP/2);
+arrow(leftX, leftY - GAP/2, midX, leftY - GAP/2);
+arrow(midX, leftY - GAP/2, midX, 100 + 55);
+arrow(midX, 100 + 55, rightX - 270, 100 + 55);
+
+// 右侧列节点
+let rightY = 100;
+
+// 6. 调用Fabric SDK
+box(rightX - 270, rightY, 540, 125);
+txt('调用Fabric SDK', rightX, rightY + 45);
+txt('执行智能合约CreateRecord', rightX, rightY + 90);
+rightY += 125 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 7. 病历数据写入区块链
+box(rightX - 270, rightY, 540, 125);
+txt('病历数据写入区块链', rightX, rightY + 45);
+txt('(不可篡改、可追溯)', rightX, rightY + 90);
+rightY += 125 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 8. 同步存储到MySQL数据库
+box(rightX - 270, rightY, 540, 125);
+txt('同步存储到MySQL数据库', rightX, rightY + 45);
+txt('(便于快速查询)', rightX, rightY + 90);
+rightY += 125 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 9. 是否创建成功
+const diamondY = rightY;
+diamond(rightX - 270, diamondY, 540, 250);
+txt('是否创建成功', rightX, diamondY + 125);
+
+// 否分支 -> 返回错误信息（右侧）- 拉大距离
+const errorX = rightX + 650;
+arrow(rightX + 270, diamondY + 125, errorX - 200, diamondY + 125);
+txt('否', rightX + 420, diamondY + 90);
+box(errorX - 200, diamondY + 70, 400, 110);
+txt('返回错误信息', errorX, diamondY + 125);
+
+// 是分支 -> 返回病历创建成功
+rightY += 250 + GAP;
+arrow(rightX, diamondY + 250, rightX, rightY);
+txt('是', rightX - 55, diamondY + 330);
+box(rightX - 270, rightY, 540, 125);
+txt('返回病历创建成功', rightX, rightY + 45);
+txt('包含病历ID和区块哈希', rightX, rightY + 90);
+rightY += 125 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 10. 结束
+ellipse(rightX - 110, rightY, 220, 110);
+txt('结束', rightX, rightY + 55);
+
+function save() {
+    const scale = 2;
+    const temp = document.createElement('canvas');
+    temp.width = c.width * scale;
+    temp.height = c.height * scale;
+    const tg = temp.getContext('2d', { alpha: false });
+    tg.imageSmoothingEnabled = false;
+    tg.scale(scale, scale);
+    tg.drawImage(c, 0, 0);
+    
+    const a = document.createElement('a');
+    a.download = '病历管理模块流程图.png';
+    a.href = temp.toDataURL('image/png', 1.0);
+    a.click();
+}
+
+async function copy() {
+    try {
+        const scale = 2;
+        const temp = document.createElement('canvas');
+        temp.width = c.width * scale;
+        temp.height = c.height * scale;
+        const tg = temp.getContext('2d', { alpha: false });
+        tg.imageSmoothingEnabled = false;
+        tg.scale(scale, scale);
+        tg.drawImage(c, 0, 0);
+        
+        const b = await new Promise(r => temp.toBlob(r, 'image/png', 1.0));
+        await navigator.clipboard.write([new ClipboardItem({'image/png': b})]);
+        alert('已复制');
+    } catch(e) {
+        alert('复制失败');
+    }
+}
+</script>
+</body>
+</html>

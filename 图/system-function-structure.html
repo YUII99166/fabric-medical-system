@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统功能结构设计图</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        #canvas-container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        canvas {
+            display: block;
+            width: 1000px;
+            height: 600px;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="functionCanvas" width="2500" height="1500"></canvas>
+    </div>
+    <div class="controls">
+        <button onclick="downloadImage()">下载为PNG图片</button>
+        <button onclick="copyToClipboard()">复制到剪贴板</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('functionCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const s = 2.5;
+        ctx.imageSmoothingEnabled = false;
+
+        // 绘制圆角矩形
+        function roundRect(x, y, width, height, radius, fill, stroke) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) {
+                ctx.fillStyle = fill;
+                ctx.fill();
+            }
+            if (stroke) {
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 绘制连接线
+        function drawLine(fromX, fromY, toX, toY, color = '#000') {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制文本
+        function drawText(text, x, y, align = 'center', color = '#000', fontSize = 17, fontWeight = 'normal') {
+            ctx.textAlign = align;
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = color;
+            ctx.font = fontWeight + ' ' + (fontSize*s) + 'px "SimSun", "宋体", sans-serif';
+            ctx.fillText(text, x, y);
+        }
+
+        // 清空画布 - 白色背景
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 绘制系统标题
+        roundRect(300*s, 30*s, 400*s, 50*s, 8*s, '#ffffff', '#000');
+        drawText('基于区块链的社区医疗管理信息系统', 500*s, 55*s, 'center', '#000', 17, 'bold');
+
+        // 绘制四个主要模块
+        const modules = [
+            {name: '患者端', x: 100, y: 150},
+            {name: '医生端', x: 300, y: 150},
+            {name: '药店端', x: 500, y: 150},
+            {name: '管理员端', x: 700, y: 150}
+        ];
+
+        // 连接主系统到各模块
+        modules.forEach(module => {
+            drawLine(500*s, 80*s, (module.x + 50)*s, 150*s);
+            roundRect(module.x*s, module.y*s, 100*s, 40*s, 8*s, '#ffffff', '#000');
+            drawText(module.name, (module.x + 50)*s, (module.y + 20)*s);
+        });
+
+        // 患者端功能
+        const patientFunctions = [
+            '登录注册', '查看病历详情', '查看个人信息', '申请授权访问', '查看药品订单'
+        ];
+        patientFunctions.forEach((func, index) => {
+            const y = 250 + index * 60;
+            drawLine(150*s, 190*s, 150*s, y*s);
+            roundRect(75*s, y*s, 150*s, 40*s, 8*s, '#ffffff', '#000');
+            drawText(func, 150*s, (y + 20)*s);
+        });
+
+        // 医生端功能
+        const doctorFunctions = [
+            '登录注册', '创建病历', '查看病历', '申请跨院授权', '添加补充记录', '搜索病人信息'
+        ];
+        doctorFunctions.forEach((func, index) => {
+            const y = 250 + index * 60;
+            drawLine(350*s, 190*s, 350*s, y*s);
+            roundRect(275*s, y*s, 150*s, 40*s, 8*s, '#ffffff', '#000');
+            drawText(func, 350*s, (y + 20)*s);
+        });
+
+        // 药店端功能
+        const pharmacyFunctions = [
+            '登录注册', '查看药品订单', '创建订单'
+        ];
+        pharmacyFunctions.forEach((func, index) => {
+            const y = 250 + index * 60;
+            drawLine(550*s, 190*s, 550*s, y*s);
+            roundRect(475*s, y*s, 150*s, 40*s, 8*s, '#ffffff', '#000');
+            drawText(func, 550*s, (y + 20)*s);
+        });
+
+        // 管理员端功能
+        const adminFunctions = [
+            '登录', '查看架构概览', '查看数据统计', '用户管理功能', '查看权限请求'
+        ];
+        adminFunctions.forEach((func, index) => {
+            const y = 250 + index * 60;
+            drawLine(750*s, 190*s, 750*s, y*s);
+            roundRect(675*s, y*s, 150*s, 40*s, 8*s, '#ffffff', '#000');
+            drawText(func, 750*s, (y + 20)*s);
+        });
+
+        // 图号
+        drawText('图 4.3 系统功能结构设计图', 500*s, 580*s, 'center', '#000', 14);
+
+        // 下载图片
+        function downloadImage() {
+            canvas.toBlob(function(blob) {
+                const link = document.createElement('a');
+                link.download = '系统功能结构设计图.png';
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(link.href), 100);
+            }, 'image/png', 1.0);
+        }
+
+        // 复制到剪贴板
+        async function copyToClipboard() {
+            try {
+                const blob = await new Promise(resolve => 
+                    canvas.toBlob(resolve, 'image/png', 1.0)
+                );
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+                alert('已复制到剪贴板！');
+            } catch (err) {
+                alert('复制失败，请使用下载功能');
+            }
+        }
+    </script>
+</body>
+</html>

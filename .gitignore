@@ -1,0 +1,65 @@
+# 依赖目录
+node_modules/
+venv/
+__pycache__/
+vendor/
+
+# 编译文件
+*.pyc
+*.class
+*.o
+*.exe
+
+# 日志文件
+*.log
+server.log
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# IDE配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 构建输出
+dist/
+build/
+*.egg-info/
+target/
+
+# 临时文件
+*.tmp
+*.bak
+*~
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# Go相关
+*.test
+*.out
+
+# 前端相关
+.nuxt/
+.cache/
+coverage/
+
+# 区块链相关
+fabric-mims-main/network/organizations/
+fabric-mims-main/network/channel-artifacts/
+fabric-mims-main/network/system-genesis-block/
+
+# 敏感信息
+*.pem
+*.key
+wallet/

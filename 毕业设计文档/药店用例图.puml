@@ -1,0 +1,35 @@
+@startuml 药店用例图
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam actorBackgroundColor #FFFFFF
+skinparam actorBorderColor #000000
+skinparam actorBorderThickness 2
+skinparam usecaseBackgroundColor #FFFFFF
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #000000
+    BorderThickness 1.5
+    ArrowColor #000000
+}
+skinparam arrow {
+    Color #000000
+    Thickness 1.5
+}
+
+left to right direction
+
+actor 药店
+
+usecase "登录注册" as login
+usecase "查看药品订单" as viewOrder
+usecase "创建订单" as createOrder
+
+usecase "查看订单详情" as viewOrderDetail
+
+药店 --> login
+药店 --> viewOrder
+药店 --> createOrder
+
+viewOrder ..> viewOrderDetail : <<包含>>
+
+@enduml

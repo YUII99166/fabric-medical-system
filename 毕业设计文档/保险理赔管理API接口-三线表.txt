@@ -1,0 +1,7 @@
+保险理赔管理API接口
+
+接口名称	请求方法	请求路径	功能描述
+创建理赔申请	POST	/insurance/create	患者创建保险理赔申请
+查询理赔列表	POST	/insurance/list	查询保险理赔申请列表
+更新理赔状态	POST	/insurance/update	更新保险理赔申请状态
+删除理赔申请	POST	/insurance/delete	删除保险理赔申请

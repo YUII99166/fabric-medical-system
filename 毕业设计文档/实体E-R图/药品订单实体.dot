@@ -1,0 +1,52 @@
+graph ER {
+    // 图形设置
+    rankdir=TB;
+    splines=true;
+    nodesep=1.5;
+    ranksep=1.5;
+    bgcolor=white;
+    
+    node [fontname="SimHei", fontsize=11];
+    edge [fontname="SimHei", fontsize=10];
+
+    // 实体（矩形）
+    DrugOrder [shape=box, label="药品订单", style=filled, fillcolor=lightblue, width=1.5, height=0.8];
+
+    // 主键属性（椭圆，下划线）
+    order_id [shape=ellipse, label=<<u>订单ID</u>>, style=filled, fillcolor=gold];
+    
+    // 唯一键属性（椭圆，下划线）
+    order_no [shape=ellipse, label=<<u>订单编号</u>>, style=filled, fillcolor=gold];
+    
+    // 外键属性（椭圆）
+    patient_id [shape=ellipse, label="患者ID", style=filled, fillcolor=lightgreen];
+    prescription_id [shape=ellipse, label="病历ID", style=filled, fillcolor=lightgreen];
+    pharmacy_id [shape=ellipse, label="药店ID", style=filled, fillcolor=lightgreen];
+    
+    // 普通属性（椭圆）
+    patient_name [shape=ellipse, label="患者姓名", style=filled, fillcolor=lightgray];
+    drug_name [shape=ellipse, label="药品名称", style=filled, fillcolor=lightgray];
+    quantity [shape=ellipse, label="数量", style=filled, fillcolor=lightgray];
+    price [shape=ellipse, label="价格", style=filled, fillcolor=lightgray];
+    total_amount [shape=ellipse, label="总金额", style=filled, fillcolor=lightgray];
+    pharmacy_name [shape=ellipse, label="药店名称", style=filled, fillcolor=lightgray];
+    status [shape=ellipse, label="订单状态", style=filled, fillcolor=lightgray];
+    created_at [shape=ellipse, label="创建时间", style=filled, fillcolor=lightgray];
+    tx_id [shape=ellipse, label="交易ID", style=filled, fillcolor=lightgray];
+
+    // 连接实体和属性（放射状分布）
+    DrugOrder -- order_id;
+    DrugOrder -- order_no;
+    DrugOrder -- patient_id;
+    DrugOrder -- patient_name;
+    DrugOrder -- prescription_id;
+    DrugOrder -- drug_name;
+    DrugOrder -- quantity;
+    DrugOrder -- price;
+    DrugOrder -- total_amount;
+    DrugOrder -- pharmacy_id;
+    DrugOrder -- pharmacy_name;
+    DrugOrder -- status;
+    DrugOrder -- created_at;
+    DrugOrder -- tx_id;
+}

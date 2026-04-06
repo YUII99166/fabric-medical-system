@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>医疗信息管理系统全局E-R图</title>
+<style>
+body { margin: 20px; background: #f0f0f0; font-family: SimSun, serif; }
+#wrap { background: white; padding: 30px; display: inline-block; }
+button { margin: 10px 5px; padding: 8px 16px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c" width="5000" height="3800"></canvas>
+</div>
+<div>
+<button onclick="save()">下载图片</button>
+<button onclick="copy()">复制</button>
+</div>
+<script>
+const c = document.getElementById('c');
+const g = c.getContext('2d', { alpha: false });
+
+g.imageSmoothingEnabled = false;
+g.fillStyle = '#ffffff';
+g.fillRect(0, 0, 5000, 3800);
+
+// 绘制矩形实体
+function entity(x, y, w, h, text, isWeak = false) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.fillRect(x, y, w, h);
+    g.strokeRect(x, y, w, h);
+    if (isWeak) {
+        g.strokeRect(x + 10, y + 10, w - 20, h - 20);
+    }
+    g.fillStyle = '#000';
+    g.font = 'normal 56px SimSun, 宋体, STSong, "Songti SC", serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x + w/2, y + h/2);
+}
+
+// 绘制菱形关系
+function relation(x, y, w, h, text) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(x + w/2, y);
+    g.lineTo(x + w, y + h/2);
+    g.lineTo(x + w/2, y + h);
+    g.lineTo(x, y + h/2);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    
+    g.fillStyle = '#000';
+    g.font = 'normal 48px SimSun, 宋体, STSong, "Songti SC", serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    
+    // 处理多行文本
+    const lines = text.split('\n');
+    const lineHeight = 58;
+    const startY = y + h/2 - (lines.length - 1) * lineHeight / 2;
+    lines.forEach((line, i) => {
+        g.fillText(line, x + w/2, startY + i * lineHeight);
+    });
+}
+
+// 绘制连接线
+function line(x1, y1, x2, y2) {
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+}
+
+// 绘制文本标签
+function label(text, x, y, size = 46) {
+    g.fillStyle = '#000';
+    g.font = 'normal ' + size + 'px SimSun, 宋体, STSong, "Songti SC", serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x, y);
+}
+
+// ========== 布局设计 ==========
+// 中心：用户实体
+const centerX = 2400;
+const centerY = 1800;
+entity(centerX - 200, centerY - 100, 400, 200, '用户');
+
+// 上方：病历实体
+const prescX = centerX;
+const prescY = 600;
+entity(prescX - 200, prescY - 100, 400, 200, '病历');
+
+// 左上：补充记录实体（弱实体）
+const suppX = 900;
+const suppY = 600;
+entity(suppX - 200, suppY - 100, 400, 200, '补充记录', true);
+
+// 右上：授权请求实体
+const authX = 3900;
+const authY = 600;
+entity(authX - 200, authY - 100, 400, 200, '授权请求');
+
+// 下方：药品订单实体
+const orderX = centerX;
+const orderY = 3000;
+entity(orderX - 200, orderY - 100, 400, 200, '药品订单');
+
+// ========== 关系绘制 ==========
+
+// 1. 用户-创建-病历（医生创建病历）
+const rel1X = centerX;
+const rel1Y = 1200;
+relation(rel1X - 150, rel1Y - 80, 300, 160, '创建');
+line(centerX, centerY - 100, rel1X, rel1Y - 80);
+line(rel1X, rel1Y + 80, prescX, prescY + 100);
+label('1', centerX - 80, centerY - 200);
+label('n', prescX - 80, prescY + 200);
+label('医生', centerX + 120, centerY - 200);
+
+// 2. 用户-拥有-病历（患者拥有病历）
+const rel2X = centerX + 600;
+const rel2Y = 1200;
+relation(rel2X - 150, rel2Y - 80, 300, 160, '拥有');
+line(centerX + 100, centerY - 80, rel2X, rel2Y - 60);
+line(rel2X, rel2Y + 60, prescX + 100, prescY + 80);
+label('1', centerX + 300, centerY - 300);
+label('n', prescX + 300, prescY + 200);
+label('患者', centerX + 300, centerY - 200);
+
+// 3. 病历-包含-补充记录（标识关系）
+const rel3X = 1650;
+const rel3Y = 600;
+relation(rel3X - 150, rel3Y - 80, 300, 160, '包含');
+line(prescX - 200, prescY, rel3X - 150, rel3Y);
+line(rel3X + 150, rel3Y, suppX + 200, suppY);
+label('1', prescX - 300, prescY - 50);
+label('n', suppX + 300, suppY - 50);
+
+// 4. 用户-添加-补充记录（医生添加补充记录）
+const rel4X = 1650;
+const rel4Y = 1200;
+relation(rel4X - 150, rel4Y - 80, 300, 160, '添加');
+line(centerX - 150, centerY - 50, rel4X - 100, rel4Y + 80);
+line(rel4X + 100, rel4Y - 80, suppX + 150, suppY + 100);
+label('1', centerX - 400, centerY - 400);
+label('n', suppX + 200, suppY + 200);
+label('医生', centerX - 300, centerY - 300);
+
+// 5. 用户-申请-授权请求（医生申请授权）
+const rel5X = 3150;
+const rel5Y = 1200;
+relation(rel5X - 150, rel5Y - 80, 300, 160, '申请');
+line(centerX + 150, centerY - 50, rel5X - 100, rel5Y + 80);
+line(rel5X + 100, rel5Y - 80, authX - 150, authY + 100);
+label('1', centerX + 400, centerY - 400);
+label('n', authX - 200, authY + 200);
+label('医生', centerX + 300, centerY - 300);
+
+// 6. 用户-审批-授权请求（患者审批授权）
+const rel6X = 3150;
+const rel6Y = 1500;
+relation(rel6X - 150, rel6Y - 80, 300, 160, '审批');
+line(centerX + 180, centerY, rel6X - 120, rel6Y + 50);
+line(rel6X + 120, rel6Y - 50, authX - 180, authY + 50);
+label('1', centerX + 500, centerY - 200);
+label('n', authX - 300, authY + 300);
+label('患者', centerX + 400, centerY - 100);
+
+// 7. 病历-关联-授权请求
+const rel7X = 3150;
+const rel7Y = 600;
+relation(rel7X - 150, rel7Y - 80, 300, 160, '关联');
+line(prescX + 200, prescY, rel7X - 150, rel7Y);
+line(rel7X + 150, rel7Y, authX - 200, authY);
+label('1', prescX + 300, prescY - 50);
+label('n', authX - 300, authY - 50);
+
+// 8. 用户-下单-药品订单（患者下订单）
+const rel8X = centerX - 600;
+const rel8Y = 2400;
+relation(rel8X - 150, rel8Y - 80, 300, 160, '下单');
+line(centerX - 100, centerY + 100, rel8X, rel8Y - 80);
+line(rel8X, rel8Y + 80, orderX - 100, orderY - 100);
+label('1', centerX - 300, centerY + 300);
+label('n', orderX - 300, orderY - 200);
+label('患者', centerX - 300, centerY + 200);
+
+// 9. 用户-处理-药品订单（药店处理订单）
+const rel9X = centerX + 600;
+const rel9Y = 2400;
+relation(rel9X - 150, rel9Y - 80, 300, 160, '处理');
+line(centerX + 100, centerY + 100, rel9X, rel9Y - 80);
+line(rel9X, rel9Y + 80, orderX + 100, orderY - 100);
+label('1', centerX + 300, centerY + 300);
+label('n', orderX + 300, orderY - 200);
+label('药店', centerX + 300, centerY + 200);
+
+// 10. 病历-生成-药品订单
+const rel10X = centerX;
+const rel10Y = 2400;
+relation(rel10X - 150, rel10Y - 80, 300, 160, '生成');
+line(prescX, prescY + 100, rel10X, rel10Y - 80);
+line(rel10X, rel10Y + 80, orderX, orderY - 100);
+label('1', prescX + 80, prescY + 200);
+label('n', orderX + 80, orderY - 200);
+
+function save() {
+    const scale = 2;
+    const temp = document.createElement('canvas');
+    temp.width = c.width * scale;
+    temp.height = c.height * scale;
+    const tg = temp.getContext('2d', { alpha: false });
+    tg.imageSmoothingEnabled = false;
+    tg.scale(scale, scale);
+    tg.drawImage(c, 0, 0);
+    
+    const a = document.createElement('a');
+    a.download = '医疗信息管理系统全局E-R图.png';
+    a.href = temp.toDataURL('image/png', 1.0);
+    a.click();
+}
+
+async function copy() {
+    try {
+        const scale = 2;
+        const temp = document.createElement('canvas');
+        temp.width = c.width * scale;
+        temp.height = c.height * scale;
+        const tg = temp.getContext('2d', { alpha: false });
+        tg.imageSmoothingEnabled = false;
+        tg.scale(scale, scale);
+        tg.drawImage(c, 0, 0);
+        
+        const b = await new Promise(r => temp.toBlob(r, 'image/png', 1.0));
+        await navigator.clipboard.write([new ClipboardItem({'image/png': b})]);
+        alert('已复制');
+    } catch(e) {
+        alert('复制失败');
+    }
+}
+</script>
+</body>
+</html>

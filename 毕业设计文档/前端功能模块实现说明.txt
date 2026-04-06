@@ -1,0 +1,310 @@
+基于区块链的医疗信息管理系统 - 前端功能模块实现说明
+
+7.3.1 用户登录模块
+
+当用户在登录页面输入用户名和密码后，handleLogin方法首先进行前端表单验证，检查用户名和密码是否符合要求（用户名至少2个字符，密码至少6位）。接着，调用Vuex store的loginWithPassword action，该action会向后端发送登录请求。如果登录成功，系统会保存用户信息到本地存储，并跳转到首页；如果失败，则根据错误类型显示相应的提示信息。核心代码如下：
+
+handleLogin() {
+  // 前端表单验证
+  if (!this.formData.username || this.formData.username.length < 2) {
+    this.$message.error('用户名至少2个字符')
+    return
+  }
+  if (!this.formData.password || this.formData.password.length < 6) {
+    this.$message.error('密码至少6位')
+    return
+  }
+  
+  this.loading = true
+  // 调用Vuex action进行登录
+  this.$store.dispatch('account/loginWithPassword', {
+    username: this.formData.username.trim(),
+    password: this.formData.password
+  }).then(() => {
+    this.$message.success('登录成功，欢迎回来！')
+    this.$router.push({ path: this.redirect || '/' })
+  }).catch((error) => {
+    // 根据错误类型显示提示
+    const errorMsg = error.message || error.toString()
+    if (errorMsg.includes('用户名或密码错误')) {
+      this.$message.error('用户名或密码错误，请检查后重试')
+    } else {
+      this.$message.error(errorMsg || '登录失败，请重试')
+    }
+  }).finally(() => {
+    this.loading = false
+  })
+}
+
+
+7.3.2 用户注册模块
+
+当用户在注册页面填写完信息后，handleRegister方法首先进行详细的前端验证，包括用户名格式、密码强度、角色选择等。对于医生角色，还需验证所属医院、科室和职称；对于患者角色，需验证年龄和性别。验证通过后，调用register API向后端提交注册请求。注册成功后，自动切换到登录标签页，并将用户名填充到登录表单中。核心代码如下：
+
+handleRegister() {
+  // 验证用户名格式
+  if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(this.formData.regUsername)) {
+    this.$message.error('用户名只能包含字母、数字、下划线和中文')
+    return
+  }
+  
+  // 验证密码强度
+  if (!/[a-zA-Z]/.test(this.formData.regPassword) || 
+      !/[0-9]/.test(this.formData.regPassword)) {
+    this.$message.warning('建议密码同时包含字母和数字，更安全')
+  }
+  
+  // 医生角色验证
+  if (this.formData.role === 'doctor') {
+    if (!this.formData.organization || !this.formData.department) {
+      this.$message.error('医生必须选择所属医院和填写科室信息')
+      return
+    }
+  }
+  
+  this.loading = true
+  // 调用注册API
+  register({
+    username: this.formData.regUsername.trim(),
+    password: this.formData.regPassword,
+    role: roleMap[this.formData.role],
+    organization: this.formData.organization || ''
+  }).then(() => {
+    this.$message.success('注册成功！请使用新账号登录')
+    this.activeTab = 'login'
+    this.formData.username = this.formData.regUsername
+  }).catch((error) => {
+    this.$message.error(error.message || '注册失败，请重试')
+  }).finally(() => {
+    this.loading = false
+  })
+}
+
+
+7.3.3 病历搜索模块
+
+当医生在搜索框输入患者姓名后，searchPatient方法会调用后端API进行病历搜索。搜索时，系统会自动处理不同的搜索关键词格式（如"周杰伦"或"病人-周杰伦"）。搜索结果会显示病历卡片列表，每个卡片包含患者信息、诊断结果、就诊时间等。根据病历所属医院是否与当前医生相同，卡片会显示"本院"或"他院"标签。对于他院病历，医生需要申请授权才能查看详情。核心代码如下：
+
+searchPatient() {
+  if (!this.searchKey || !this.searchKey.trim()) {
+    this.$message.warning('请输入患者姓名')
+    return
+  }
+  
+  this.searching = true
+  this.searched = true
+  
+  // 调用搜索API
+  searchPrescriptions({
+    searchKey: this.searchKey.trim(),
+    doctorID: this.account_id
+  }).then(response => {
+    this.prescriptionList = response.data.map(item => ({
+      ...item,
+      is_same_org: item.organization === this.currentOrg,
+      can_view: item.organization === this.currentOrg || item.has_access
+    }))
+    
+    if (this.prescriptionList.length === 0) {
+      this.$message.info('未找到该患者的病历记录')
+    } else {
+      this.$message.success(`找到 ${this.prescriptionList.length} 条病历记录`)
+    }
+  }).catch(error => {
+    this.$message.error('搜索失败：' + error.message)
+  }).finally(() => {
+    this.searching = false
+  })
+}
+
+
+7.3.4 授权申请模块
+
+当医生点击"申请授权"按钮时，openRequestDialog方法会打开授权申请对话框，医生需要填写申请理由。提交申请时，submitAccessRequest方法会调用后端API创建授权请求。申请提交后，系统会将请求记录到区块链上，患者可以在授权管理页面查看并审批该请求。申请成功后，对话框自动关闭并刷新病历列表。核心代码如下：
+
+submitAccessRequest() {
+  if (!this.accessReason || !this.accessReason.trim()) {
+    this.$message.warning('请填写申请理由')
+    return
+  }
+  
+  this.submitting = true
+  
+  // 调用授权申请API
+  requestAccess({
+    prescriptionID: this.selectedPrescription.prescription_id,
+    doctorID: this.account_id,
+    reason: this.accessReason.trim()
+  }).then(() => {
+    this.$message.success('授权申请已提交，请等待患者审批')
+    this.requestDialogVisible = false
+    this.accessReason = ''
+    this.searchPatient() // 刷新列表
+  }).catch(error => {
+    this.$message.error('申请失败：' + error.message)
+  }).finally(() => {
+    this.submitting = false
+  })
+}
+
+
+7.3.5 授权审批模块
+
+当患者在授权管理页面查看待审批的授权请求时，系统会从区块链查询所有与该患者相关的授权请求。患者可以点击"通过"或"拒绝"按钮进行审批。审批时，handleApprove方法会调用后端API更新授权请求状态。如果选择拒绝，需要填写拒绝理由。审批结果会记录到区块链上，医生可以实时查看审批状态。核心代码如下：
+
+handleApprove(request, approved) {
+  let rejectReason = ''
+  
+  // 如果拒绝，需要填写理由
+  if (!approved) {
+    this.$prompt('请输入拒绝理由', '拒绝授权', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    }).then(({ value }) => {
+      rejectReason = value
+      this.submitApproval(request, approved, rejectReason)
+    }).catch(() => {
+      this.$message.info('已取消操作')
+    })
+  } else {
+    this.submitApproval(request, approved, rejectReason)
+  }
+}
+
+submitApproval(request, approved, rejectReason) {
+  // 调用审批API
+  approveAccess({
+    requestID: request.request_id,
+    patientID: this.currentAccountId,
+    approved: approved ? 'true' : 'false',
+    rejectReason: rejectReason || ''
+  }).then(() => {
+    this.$message.success(approved ? '已通过授权申请' : '已拒绝授权申请')
+    this.loadAccessRequests() // 刷新列表
+  }).catch(error => {
+    this.$message.error('操作失败：' + error.message)
+  })
+}
+
+
+7.3.6 隐私溯源模块
+
+当患者进入隐私溯源页面时，系统会自动加载该患者的病历访问日志和统计数据。loadAccessLogs方法会调用后端API查询所有访问记录，包括访问者姓名、角色、组织、访问时间、IP地址等信息。这些记录都存储在区块链上，确保不可篡改。页面顶部显示统计卡片，包括总访问次数、不同访问者数量、最近7天访问次数等。访问记录以时间线形式展示，患者可以清楚地看到谁在什么时间访问了自己的病历。核心代码如下：
+
+loadAccessLogs() {
+  this.loading = true
+  
+  // 调用访问日志查询API
+  getAccessLogs({
+    patient_id: this.currentPatientId,
+    page: this.currentPage,
+    page_size: this.pageSize
+  }).then(response => {
+    this.accessLogs = response.data.logs || []
+    this.total = response.data.total || 0
+    
+    // 加载统计数据
+    this.loadStatistics()
+  }).catch(error => {
+    this.$message.error('加载访问日志失败：' + error.message)
+  }).finally(() => {
+    this.loading = false
+  })
+}
+
+loadStatistics() {
+  // 调用统计API
+  getAccessStatistics({
+    patient_id: this.currentPatientId
+  }).then(response => {
+    this.statistics = response.data || {
+      total_access: 0,
+      unique_accessors: 0,
+      recent_access: 0
+    }
+  }).catch(error => {
+    console.error('加载统计数据失败：', error)
+  })
+}
+
+
+7.3.7 病历详情查看模块
+
+当用户点击病历卡片的"查看详情"按钮时，openDialog方法会打开病历详情对话框。对话框中展示完整的病历信息，包括患者信息、医生信息、主诉、现病史、体格检查、诊断、治疗方案、用药信息、医嘱等。如果病历有补充记录，还会显示补充记录列表。同时，系统会自动调用recordAccess方法记录本次访问行为到区块链上，用于隐私溯源。核心代码如下：
+
+openDialog(prescription) {
+  this.selectedPrescription = prescription
+  this.dialogVisible = true
+  
+  // 记录访问行为到区块链
+  this.recordAccess(prescription)
+}
+
+recordAccess(prescription) {
+  // 调用访问记录API
+  recordPrescriptionAccess({
+    prescription_id: prescription.prescription_id,
+    prescription_no: prescription.prescription_no,
+    patient_id: prescription.patient_id,
+    patient_name: prescription.patient_name,
+    accessor_id: this.account_id,
+    accessor_name: this.account_name,
+    accessor_role: this.role,
+    accessor_organization: this.organization,
+    access_type: 'view',
+    access_reason: '查看病历详情'
+  }).then(() => {
+    console.log('访问记录已保存到区块链')
+  }).catch(error => {
+    console.error('记录访问失败：', error)
+  })
+}
+
+
+7.3.8 组织证书管理模块
+
+当管理员进入授权管理页面时，系统会显示所有已认证的区块链组织及其证书信息。loadOrganizations方法会加载组织列表，包括组织名称、MSP ID、域名、节点数量、端口、角色、证书有效期等。每个组织卡片显示认证状态（已认证或审核中），管理员可以点击"查看证书详情"按钮查看详细的证书信息。页面顶部显示统计卡片，包括认证组织数量、区块链节点总数、认证率等。核心代码如下：
+
+loadOrganizations() {
+  this.organizations = [
+    {
+      name: '协和医院',
+      mspId: 'TaobaoMSP',
+      domain: 'taobao.example.com',
+      nodeCount: 2,
+      ports: '7051, 8051',
+      role: 'Peer组织',
+      certValidity: '2025-12-31',
+      status: 'certified',
+      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      icon: 'el-icon-office-building'
+    },
+    {
+      name: '301医院',
+      mspId: 'JDMSP',
+      domain: 'jd.example.com',
+      nodeCount: 2,
+      ports: '9051, 10051',
+      role: 'Peer组织',
+      certValidity: '2025-12-31',
+      status: 'certified',
+      color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      icon: 'el-icon-office-building'
+    }
+  ]
+  
+  // 计算统计数据
+  this.totalNodes = this.organizations.reduce((sum, org) => 
+    sum + org.nodeCount, 0)
+  this.certifiedOrgs = this.organizations.filter(org => 
+    org.status === 'certified')
+  this.pendingOrgs = this.organizations.filter(org => 
+    org.status === 'pending')
+  this.certificationRate = Math.round(
+    (this.certifiedOrgs.length / this.organizations.length) * 100)
+}
+
+viewCertDetails(org) {
+  this.selectedOrg = org
+  this.certDialogVisible = true
+}

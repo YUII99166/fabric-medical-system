@@ -1,0 +1,40 @@
+graph ER {
+    // 图形设置
+    rankdir=TB;
+    splines=true;
+    nodesep=1.5;
+    ranksep=1.5;
+    bgcolor=white;
+    
+    node [fontname="SimHei", fontsize=11];
+    edge [fontname="SimHei", fontsize=10];
+
+    // 实体（矩形）
+    AccessRequest [shape=box, label="授权请求", style=filled, fillcolor=lightblue, width=1.5, height=0.8];
+
+    // 主键属性（椭圆，下划线）
+    request_id [shape=ellipse, label=<<u>请求ID</u>>, style=filled, fillcolor=gold];
+    
+    // 外键属性（椭圆）
+    prescription_id [shape=ellipse, label="病历ID", style=filled, fillcolor=lightgreen];
+    patient_id [shape=ellipse, label="患者ID", style=filled, fillcolor=lightgreen];
+    doctor_id [shape=ellipse, label="医生ID", style=filled, fillcolor=lightgreen];
+    
+    // 普通属性（椭圆）
+    doctor_org [shape=ellipse, label="医生组织", style=filled, fillcolor=lightgray];
+    reason [shape=ellipse, label="申请理由", style=filled, fillcolor=lightgray];
+    status [shape=ellipse, label="状态", style=filled, fillcolor=lightgray];
+    request_time [shape=ellipse, label="申请时间", style=filled, fillcolor=lightgray];
+    response_time [shape=ellipse, label="响应时间", style=filled, fillcolor=lightgray];
+
+    // 连接实体和属性（放射状分布）
+    AccessRequest -- request_id;
+    AccessRequest -- prescription_id;
+    AccessRequest -- patient_id;
+    AccessRequest -- doctor_id;
+    AccessRequest -- doctor_org;
+    AccessRequest -- reason;
+    AccessRequest -- status;
+    AccessRequest -- request_time;
+    AccessRequest -- response_time;
+}

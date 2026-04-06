@@ -1,0 +1,7 @@
+接口名称	请求方法	请求路径	功能描述
+用户注册	POST	/register	新用户注册，创建区块链账户
+用户登录	POST	/login	用户身份验证，返回用户信息
+查询用户列表	GET	/account/list	查询用户列表，支持分页和条件筛选
+创建用户	POST	/account/create	管理员创建新用户账户
+更新用户	PUT	/account/update	更新用户信息
+删除用户	DELETE	/account/delete	删除用户账户（软删除）

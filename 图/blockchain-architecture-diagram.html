@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperledger Fabric 联盟链网络架构图</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SimHei', 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 40px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 2em;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hyperledger Fabric 联盟链网络架构图</h1>
+        <canvas id="architectureCanvas" width="1300" height="700"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('architectureCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 设置字体
+        ctx.font = '16px SimHei, Microsoft YaHei, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // 绘制圆角矩形函数
+        function drawRoundRect(x, y, width, height, radius, fillColor, strokeColor, lineWidth = 2) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        }
+
+        // 绘制虚线圆角矩形
+        function drawDashedRoundRect(x, y, width, height, radius, strokeColor) {
+            ctx.setLineDash([8, 5]);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // 绘制箭头
+        function drawArrow(fromX, fromY, toX, toY, color, dashed = false) {
+            if (dashed) {
+                ctx.setLineDash([8, 5]);
+            }
+            
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2;
+            
+            // 绘制线
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            
+            // 绘制箭头头部
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            const arrowLength = 12;
+            const arrowAngle = Math.PI / 6;
+            
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(
+                toX - arrowLength * Math.cos(angle - arrowAngle),
+                toY - arrowLength * Math.sin(angle - arrowAngle)
+            );
+            ctx.lineTo(
+                toX - arrowLength * Math.cos(angle + arrowAngle),
+                toY - arrowLength * Math.sin(angle + arrowAngle)
+            );
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.setLineDash([]);
+        }
+
+        // 绘制多行文本
+        function drawMultilineText(text, x, y, lineHeight, color = '#333', fontSize = 16, bold = false) {
+            ctx.fillStyle = color;
+            ctx.font = `${bold ? 'bold ' : ''}${fontSize}px SimHei, Microsoft YaHei, Arial`;
+            const lines = text.split('\n');
+            const startY = y - ((lines.length - 1) * lineHeight) / 2;
+            lines.forEach((line, index) => {
+                ctx.fillText(line, x, startY + index * lineHeight);
+            });
+        }
+
+        // 1. 顶部 - Hyperledger Fabric 联盟链网络
+        drawRoundRect(150, 30, 550, 120, 15, '#B3D9FF', '#4A90E2', 3);
+        drawMultilineText('Hyperledger Fabric 联盟链网络', 425, 60, 22, '#1a1a1a', 20, true);
+        drawMultilineText('appchannel（应用通道）', 425, 85, 18, '#333', 14);
+        drawMultilineText('共享账本数据 | 执行智能合约 | 多机构协同', 425, 110, 18, '#555', 13);
+
+        // 2. 右上 - 排序服务
+        drawRoundRect(780, 30, 220, 120, 15, '#FFD9D9', '#E24A4A', 3);
+        drawMultilineText('排序服务', 890, 55, 20, '#1a1a1a', 18, true);
+        drawMultilineText('orderer.qq.com', 890, 78, 18, '#333', 13);
+        drawMultilineText('Raft 共识算法', 890, 98, 18, '#555', 13);
+        drawMultilineText('交易排序 | 区块生成 | 账本同步', 890, 118, 18, '#555', 12);
+
+        // 3. 中间 - RegCenterMSP 监管中心
+        drawRoundRect(250, 200, 300, 140, 15, '#FFE4B3', '#E2A84A', 3);
+        drawMultilineText('RegCenterMSP - 监管中心', 400, 230, 22, '#1a1a1a', 18, true);
+        drawMultilineText('数据监管 | 审计监入 | 合规监督', 400, 255, 18, '#333', 13);
+        drawMultilineText('peer0.regcenter.com（主节点）', 400, 285, 18, '#555', 12);
+        drawMultilineText('peer1.regcenter.com（备节点）', 400, 305, 18, '#555', 12);
+        drawMultilineText('监管审核 | 数据监管 | 交易审查 | 账可用', 400, 325, 18, '#555', 11);
+
+        // 4. 右中 - 背书策略（虚线框）
+        drawDashedRoundRect(620, 200, 240, 140, 15, '#E2A84A');
+        drawMultilineText('背书策略', 740, 225, 20, '#1a1a1a', 16, true);
+        drawMultilineText('OutOf(3,', 740, 255, 18, '#333', 13);
+        drawMultilineText('TaobaoMSP.member,', 740, 275, 18, '#333', 12);
+        drawMultilineText('JDMSP.member,', 740, 293, 18, '#333', 12);
+        drawMultilineText('WenjinMSP.member,', 740, 311, 18, '#333', 12);
+        drawMultilineText('RegCenterMSP.member)', 740, 329, 18, '#333', 12);
+
+        // 5. 底部三个医疗机构
+        // TaobaoMSP - 协和医院
+        drawRoundRect(50, 400, 280, 140, 15, '#B3E5FF', '#4A9FE2', 3);
+        drawMultilineText('TaobaoMSP - 协和医院', 190, 430, 22, '#1a1a1a', 17, true);
+        drawMultilineText('开展医疗服务', 190, 455, 18, '#333', 13);
+        drawMultilineText('peer0.taobao.com（主节点）', 190, 485, 18, '#555', 12);
+        drawMultilineText('peer1.taobao.com（备节点）', 190, 505, 18, '#555', 12);
+        drawMultilineText('病历存储 | 智能诊断 | 交易背书 | 账可用', 190, 525, 18, '#555', 11);
+
+        // JDMSP - 301医院
+        drawRoundRect(360, 400, 280, 140, 15, '#E4B3FF', '#A84AE2', 3);
+        drawMultilineText('JDMSP - 301医院', 500, 430, 22, '#1a1a1a', 17, true);
+        drawMultilineText('开展医疗服务', 500, 455, 18, '#333', 13);
+        drawMultilineText('peer0.jd.com（主节点）', 500, 485, 18, '#555', 12);
+        drawMultilineText('peer1.jd.com（备节点）', 500, 505, 18, '#555', 12);
+        drawMultilineText('病历存储 | 智能诊断 | 交易背书 | 账可用', 500, 525, 18, '#555', 11);
+
+        // WenjinMSP - 温江社区医疗中心
+        drawRoundRect(670, 400, 280, 140, 15, '#B3FFB3', '#4AE24A', 3);
+        drawMultilineText('WenjinMSP - 温江社区医疗中心', 810, 430, 22, '#1a1a1a', 16, true);
+        drawMultilineText('开展基层医疗服务', 810, 455, 18, '#333', 13);
+        drawMultilineText('peer0.wenjin.com（主节点）', 810, 485, 18, '#555', 12);
+        drawMultilineText('peer1.wenjin.com（备节点）', 810, 505, 18, '#555', 12);
+        drawMultilineText('病历存储 | 智能诊断 | 交易背书 | 账可用', 810, 525, 18, '#555', 11);
+
+        // 6. 右下 - 待接入组织
+        drawRoundRect(980, 400, 280, 140, 15, '#FFD9D9', '#E24A4A', 3);
+        drawMultilineText('待接入组织（审核中）', 1120, 425, 22, '#1a1a1a', 16, true);
+        drawMultilineText('InsuranceMSP-保险人组织', 1120, 455, 18, '#333', 13);
+        drawMultilineText('peer.insurance.com', 1120, 475, 18, '#555', 12);
+        drawMultilineText('DUTCMMSP-卫生监管大学-第二附属医院', 1120, 500, 18, '#333', 11);
+        drawMultilineText('peer.cdutcm.com', 1120, 518, 18, '#555', 12);
+
+        // 绘制箭头连接
+        // 从 Fabric 到 排序服务
+        drawArrow(700, 90, 780, 90, '#E2A84A', false);
+
+        // 从 Fabric 到 RegCenterMSP
+        drawArrow(425, 150, 400, 200, '#E2A84A', false);
+
+        // 从 RegCenterMSP 到 背书策略
+        drawArrow(550, 270, 620, 270, '#E2A84A', true);
+
+        // 从 RegCenterMSP 到三个医院
+        drawArrow(300, 340, 190, 400, '#4A9FE2', false);
+        drawArrow(400, 340, 500, 400, '#A84AE2', false);
+        drawArrow(500, 340, 810, 400, '#4AE24A', false);
+
+        // 从背书策略到待接入组织
+        drawArrow(860, 310, 1050, 400, '#E24A4A', true);
+
+        // 从排序服务到待接入组织
+        drawArrow(950, 150, 1120, 400, '#E24A4A', true);
+
+        // 从排序服务到背书策略
+        drawArrow(860, 200, 780, 270, '#E2A84A', true);
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>连接线测试</title>
+  <style>
+    body { margin: 20px; background: #f0f0f0; font-family: SimSun, serif; }
+    #wrap { background: white; padding: 30px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c" width="1600" height="1200"></canvas>
+</div>
+<script>
+const c = document.getElementById('c');
+const g = c.getContext('2d', { alpha: false });
+g.imageSmoothingEnabled = false;
+g.fillStyle = '#ffffff';
+g.fillRect(0, 0, 1600, 1200);
+
+// 绘制函数
+function entity(x, y, w, h, text) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.fillRect(x, y, w, h);
+    g.strokeRect(x, y, w, h);
+    g.fillStyle = '#000';
+    g.font = 'normal 40px SimSun';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x + w/2, y + h/2);
+}
+
+function relation(x, y, w, h, text) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(x + w/2, y);
+    g.lineTo(x + w, y + h/2);
+    g.lineTo(x + w/2, y + h);
+    g.lineTo(x, y + h/2);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#000';
+    g.font = 'normal 36px SimSun';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x + w/2, y + h/2);
+}
+
+function attribute(x, y, w, h, text) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#000';
+    g.font = 'normal 30px SimSun';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x + w/2, y + h/2);
+}
+
+function line(x1, y1, x2, y2, color = '#000') {
+    g.strokeStyle = color;
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+}
+
+// 边缘计算函数
+function getRectEdgePoint(rectX, rectY, rectW, rectH, targetX, targetY) {
+    const centerX = rectX + rectW / 2;
+    const centerY = rectY + rectH / 2;
+    const dx = targetX - centerX;
+    const dy = targetY - centerY;
+    
+    if (dx === 0 && dy === 0) return { x: centerX, y: centerY };
+    
+    const angle = Math.atan2(dy, dx);
+    const absAngle = Math.abs(angle);
+    
+    if (absAngle < Math.atan2(rectH, rectW)) {
+        // 右边
+        return { x: rectX + rectW, y: centerY + (rectW / 2) * Math.tan(angle) };
+    } else if (absAngle > Math.PI - Math.atan2(rectH, rectW)) {
+        // 左边
+        return { x: rectX, y: centerY - (rectW / 2) * Math.tan(angle) };
+    } else if (angle > 0) {
+        // 下边
+        return { x: centerX + (rectH / 2) / Math.tan(angle), y: rectY + rectH };
+    } else {
+        // 上边
+        return { x: centerX - (rectH / 2) / Math.tan(angle), y: rectY };
+    }
+}
+
+function getEllipseEdgePoint(cx, cy, rx, ry, targetX, targetY) {
+    const dx = targetX - cx;
+    const dy = targetY - cy;
+    
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    
+    const angle = Math.atan2(dy, dx);
+    return {
+        x: cx + rx * Math.cos(angle),
+        y: cy + ry * Math.sin(angle)
+    };
+}
+
+function getDiamondEdgePoint(cx, cy, w, h, targetX, targetY) {
+    const dx = targetX - cx;
+    const dy = targetY - cy;
+    
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    
+    const angle = Math.atan2(dy, dx);
+    const absAngle = Math.abs(angle);
+    const halfW = w / 2;
+    const halfH = h / 2;
+    
+    if (absAngle < Math.atan2(halfH, halfW)) {
+        // 右边
+        const t = halfW / Math.abs(Math.cos(angle));
+        return { x: cx + t * Math.cos(angle), y: cy + t * Math.sin(angle) };
+    } else if (absAngle > Math.PI - Math.atan2(halfH, halfW)) {
+        // 左边
+        const t = halfW / Math.abs(Math.cos(angle));
+        return { x: cx + t * Math.cos(angle), y: cy + t * Math.sin(angle) };
+    } else {
+        // 上边或下边
+        const t = halfH / Math.abs(Math.sin(angle));
+        return { x: cx + t * Math.cos(angle), y: cy + t * Math.sin(angle) };
+    }
+}
+
+// 测试场景
+g.fillStyle = '#000';
+g.font = 'bold 32px SimSun';
+g.textAlign = 'center';
+g.fillText('连接线精确度测试', 800, 50);
+
+// 场景1：实体-属性连接
+const entityX = 200, entityY = 200, entityW = 200, entityH = 100;
+entity(entityX, entityY, entityW, entityH, '实体');
+
+const attrX = 500, attrY = 250, attrRx = 60, attrRy = 30;
+attribute(attrX - attrRx, attrY - attrRy, attrRx * 2, attrRy * 2, '属性');
+
+const rectEdge = getRectEdgePoint(entityX, entityY, entityW, entityH, attrX, attrY);
+const ellipseEdge = getEllipseEdgePoint(attrX, attrY, attrRx, attrRy, rectEdge.x, rectEdge.y);
+line(rectEdge.x, rectEdge.y, ellipseEdge.x, ellipseEdge.y, '#00f');
+
+// 绘制连接点标记
+g.fillStyle = '#f00';
+g.beginPath();
+g.arc(rectEdge.x, rectEdge.y, 4, 0, Math.PI * 2);
+g.fill();
+g.beginPath();
+g.arc(ellipseEdge.x, ellipseEdge.y, 4, 0, Math.PI * 2);
+g.fill();
+
+// 场景2：实体-关系-实体连接
+const entity1X = 200, entity1Y = 500, entity1W = 200, entity1H = 100;
+entity(entity1X, entity1Y, entity1W, entity1H, '实体1');
+
+const relX = 600, relY = 550, relW = 200, relH = 100;
+relation(relX - relW/2, relY - relH/2, relW, relH, '关系');
+
+const entity2X = 1000, entity2Y = 500, entity2W = 200, entity2H = 100;
+entity(entity2X, entity2Y, entity2W, entity2H, '实体2');
+
+// 实体1到关系
+const e1ToRelStart = getRectEdgePoint(entity1X, entity1Y, entity1W, entity1H, relX, relY);
+const e1ToRelEnd = getDiamondEdgePoint(relX, relY, relW, relH, e1ToRelStart.x, e1ToRelStart.y);
+line(e1ToRelStart.x, e1ToRelStart.y, e1ToRelEnd.x, e1ToRelEnd.y, '#0a0');
+
+// 关系到实体2
+const relToE2Start = getDiamondEdgePoint(relX, relY, relW, relH, entity2X + entity2W/2, entity2Y + entity2H/2);
+const relToE2End = getRectEdgePoint(entity2X, entity2Y, entity2W, entity2H, relToE2Start.x, relToE2Start.y);
+line(relToE2Start.x, relToE2Start.y, relToE2End.x, relToE2End.y, '#0a0');
+
+// 绘制连接点标记
+g.fillStyle = '#f00';
+[e1ToRelStart, e1ToRelEnd, relToE2Start, relToE2End].forEach(p => {
+    g.beginPath();
+    g.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    g.fill();
+});
+
+// 场景3：多角度测试
+const centerEntityX = 700, centerEntityY = 900, centerEntityW = 200, centerEntityH = 100;
+entity(centerEntityX, centerEntityY, centerEntityW, centerEntityH, '中心');
+
+const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+const radius = 250;
+
+angles.forEach(deg => {
+    const rad = deg * Math.PI / 180;
+    const attrCx = centerEntityX + centerEntityW/2 + radius * Math.cos(rad);
+    const attrCy = centerEntityY + centerEntityH/2 + radius * Math.sin(rad);
+    const attrR = 25;
+    
+    attribute(attrCx - attrR, attrCy - attrR, attrR * 2, attrR * 2, deg.toString());
+    
+    const rectPt = getRectEdgePoint(centerEntityX, centerEntityY, centerEntityW, centerEntityH, attrCx, attrCy);
+    const ellipsePt = getEllipseEdgePoint(attrCx, attrCy, attrR, attrR, rectPt.x, rectPt.y);
+    line(rectPt.x, rectPt.y, ellipsePt.x, ellipsePt.y, '#a0a');
+    
+    // 标记连接点
+    g.fillStyle = '#f00';
+    g.beginPath();
+    g.arc(rectPt.x, rectPt.y, 3, 0, Math.PI * 2);
+    g.fill();
+    g.beginPath();
+    g.arc(ellipsePt.x, ellipsePt.y, 3, 0, Math.PI * 2);
+    g.fill();
+});
+
+// 说明文字
+g.fillStyle = '#000';
+g.font = 'normal 24px SimSun';
+g.textAlign = 'left';
+g.fillText('红点：连接点位置（应该在图形边缘上）', 50, 1150);
+g.fillText('蓝线：实体-属性连接  绿线：实体-关系-实体连接  紫线：多角度测试', 50, 1180);
+</script>
+</body>
+</html>

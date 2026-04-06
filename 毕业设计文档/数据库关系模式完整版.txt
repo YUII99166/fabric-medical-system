@@ -1,0 +1,97 @@
+基于区块链的医疗信息管理系统 - 数据库关系模式
+
+1. Users(用户表)
+
+Users(用户ID, 用户名, 密码, 账户名称, 角色, 组织MSPID, 组织名称, 科室, 医生职称, 医师执业证号, 年龄, 性别, 联系电话, 电子邮箱, 状态, 创建时间, 更新时间)
+
+主键：用户ID
+说明：存储系统中所有用户信息，包括医生、患者、管理员、药店、保险机构等不同角色
+
+
+2. Prescriptions(病历表)
+
+Prescriptions(病历ID, 病历编号, 患者ID, 患者姓名, 医生ID, 医生姓名, 医生职称, 医院ID, 医院名称, 组织MSPID, 组织名称, 科室, 主诉, 现病史, 体格检查, 诊断, 治疗方案, 处方药品, 药品订单信息, 医嘱, 备注, 创建时间, 区块链交易ID, 创建者MSPID)
+
+主键：病历ID
+外键：患者ID → Users(用户ID)
+      医生ID → Users(用户ID)
+说明：存储患者的电子病历信息，缓存区块链数据
+
+
+3. Access_Requests(授权请求表)
+
+Access_Requests(请求ID, 病历ID, 患者ID, 患者姓名, 医生ID, 医生姓名, 医生组织MSPID, 医生组织名称, 申请理由, 状态, 拒绝理由, 申请时间, 审批时间)
+
+主键：请求ID
+外键：病历ID → Prescriptions(病历ID)
+      患者ID → Users(用户ID)
+      医生ID → Users(用户ID)
+说明：存储医生跨院查看病历的授权请求信息
+
+
+4. Supplement_Records(补充诊疗记录表)
+
+Supplement_Records(补充记录ID, 原始病历ID, 记录类型, 医生ID, 医生姓名, 医生职称, 科室, 医院名称, 组织MSPID, 组织名称, 症状描述, 诊断, 治疗方案, 处方药品, 医嘱, 备注, 创建时间, 区块链交易ID, 创建者MSPID, 是否只读)
+
+主键：补充记录ID
+外键：原始病历ID → Prescriptions(病历ID)
+      医生ID → Users(用户ID)
+说明：存储医生针对已有病历添加的补充诊疗信息
+
+
+5. Drug_Orders(药品订单表)
+
+Drug_Orders(订单ID, 药品名称, 数量, 价格, 患者ID, 患者姓名, 病历ID, 药店ID, 药店名称, 订单状态, 创建时间, 更新时间)
+
+主键：订单ID
+外键：患者ID → Users(用户ID)
+      病历ID → Prescriptions(病历ID)
+      药店ID → Users(用户ID)
+说明：存储患者的药品订单信息
+
+
+6. Insurance_Claims(保险报销表)
+
+Insurance_Claims(报销订单ID, 病历ID, 患者ID, 患者姓名, 保险机构ID, 保险机构名称, 报销金额, 状态, 拒绝理由, 申请时间, 审批时间)
+
+主键：报销订单ID
+外键：病历ID → Prescriptions(病历ID)
+      患者ID → Users(用户ID)
+      保险机构ID → Users(用户ID)
+说明：存储患者的保险报销申请信息
+
+
+7. Organizations(组织机构表)
+
+Organizations(组织ID, 组织名称, 组织类型, 域名, 地址, 联系人, 联系电话, 联系邮箱, 组织描述, 状态, 创建时间, 更新时间)
+
+主键：组织ID
+说明：存储参与区块链联盟的医疗机构信息，如医院、药店、保险机构、监管中心
+
+
+8. Audit_Logs(审计日志表)
+
+Audit_Logs(日志ID, 用户ID, 用户名, 用户角色, 操作动作, 资源类型, 资源ID, 操作描述, IP地址, 用户代理, 区块链交易ID, 操作状态, 错误信息, 操作时间)
+
+主键：日志ID
+外键：用户ID → Users(用户ID)
+说明：存储系统中所有重要操作的审计日志，用于安全审计和问题追溯
+
+
+9. System_Configs(系统配置表)
+
+System_Configs(配置ID, 配置键, 配置值, 配置类型, 配置描述, 是否可编辑, 创建时间, 更新时间)
+
+主键：配置ID
+说明：存储系统的配置参数
+
+
+10. Prescription_Access_Logs(病历访问日志表)
+
+Prescription_Access_Logs(日志ID, 病历ID, 病历编号, 患者ID, 患者姓名, 访问者ID, 访问者姓名, 访问者角色, 访问者组织MSPID, 访问者组织名称, 访问类型, 访问原因, IP地址, 用户代理, 区块链交易ID, 访问时间)
+
+主键：日志ID
+外键：病历ID → Prescriptions(病历ID)
+      患者ID → Users(用户ID)
+      访问者ID → Users(用户ID)
+说明：存储所有对病历的访问操作记录，用于隐私保护和溯源

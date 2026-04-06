@@ -1,0 +1,171 @@
+graph GlobalER {
+    // 图形设置
+    splines=curved;
+    nodesep=1.8;
+    ranksep=2.5;
+    bgcolor=white;
+    overlap=false;
+    
+    node [fontname="SimHei", fontsize=11];
+    edge [fontname="SimHei", fontsize=9, color="#666666"];
+
+    // 左侧 - 补充记录实体（弱实体，双线框）
+    SupplementRecord [
+        shape=box, 
+        label="补充记录", 
+        style=filled, 
+        fillcolor="lightblue", 
+        color="black",
+        width=1.8, 
+        height=0.8,
+        peripheries=2
+    ];
+
+    // 补充记录的属性
+    supplement_id [shape=ellipse, label=<<u>补充ID</u>>, style=filled, fillcolor="yellow"];
+    content [shape=ellipse, label="内容", style=filled, fillcolor="white"];
+
+    // 中心上方 - 病历实体
+    Prescription [
+        shape=box, 
+        label="病历", 
+        style=filled, 
+        fillcolor="lightblue", 
+        color="black",
+        width=1.8, 
+        height=0.8
+    ];
+
+    // 病历的属性
+    prescription_id [shape=ellipse, label=<<u>病历ID</u>>, style=filled, fillcolor="yellow"];
+    diagnosis [shape=ellipse, label="诊断", style=filled, fillcolor="white"];
+    medical_advice [shape=ellipse, label="医嘱", style=filled, fillcolor="white"];
+
+    // 右侧 - 授权请求实体
+    AccessRequest [
+        shape=box, 
+        label="授权请求", 
+        style=filled, 
+        fillcolor="lightblue", 
+        color="black",
+        width=1.8, 
+        height=0.8
+    ];
+
+    // 授权请求的属性
+    request_id [shape=ellipse, label=<<u>请求ID</u>>, style=filled, fillcolor="yellow"];
+    reason [shape=ellipse, label="理由", style=filled, fillcolor="white"];
+
+    // 中心 - 用户实体
+    User [
+        shape=box, 
+        label="用户", 
+        style=filled, 
+        fillcolor="lightblue", 
+        color="black",
+        width=1.8, 
+        height=0.8
+    ];
+
+    // 用户的属性
+    user_id [shape=ellipse, label=<<u>用户ID</u>>, style=filled, fillcolor="yellow"];
+    username [shape=ellipse, label="用户名", style=filled, fillcolor="white"];
+    role [shape=ellipse, label="角色", style=filled, fillcolor="white"];
+
+    // 下方 - 药品订单实体
+    DrugOrder [
+        shape=box, 
+        label="药品订单", 
+        style=filled, 
+        fillcolor="lightblue", 
+        color="black",
+        width=1.8, 
+        height=0.8
+    ];
+
+    // 药品订单的属性
+    order_id [shape=ellipse, label=<<u>订单ID</u>>, style=filled, fillcolor="yellow"];
+    drug_name [shape=ellipse, label="药品名", style=filled, fillcolor="white"];
+
+    // 关系（菱形）
+    creates [shape=diamond, label="创建", style=filled, fillcolor="white"];
+    owns [shape=diamond, label="拥有", style=filled, fillcolor="white"];
+    contains [shape=diamond, label="包含", style=filled, fillcolor="white", peripheries=2];
+    adds [shape=diamond, label="添加", style=filled, fillcolor="white"];
+    requests [shape=diamond, label="申请", style=filled, fillcolor="white"];
+    approves [shape=diamond, label="审批", style=filled, fillcolor="white"];
+    relates_to [shape=diamond, label="关联", style=filled, fillcolor="white"];
+    places [shape=diamond, label="下单", style=filled, fillcolor="white"];
+    processes [shape=diamond, label="处理", style=filled, fillcolor="white"];
+    based_on [shape=diamond, label="基于", style=filled, fillcolor="white"];
+
+    // 属性连接（简洁连接）
+    SupplementRecord -- supplement_id;
+    SupplementRecord -- content;
+    
+    Prescription -- prescription_id;
+    Prescription -- diagnosis;
+    Prescription -- medical_advice;
+    
+    AccessRequest -- request_id;
+    AccessRequest -- reason;
+    
+    User -- user_id;
+    User -- username;
+    User -- role;
+    
+    DrugOrder -- order_id;
+    DrugOrder -- drug_name;
+
+    // 实体关系连接（优雅的曲线）
+    // 医生创建病历
+    User -- creates [label="1"];
+    creates -- Prescription [label="N"];
+
+    // 患者拥有病历
+    User -- owns [label="1"];
+    owns -- Prescription [label="N"];
+
+    // 病历包含补充记录（标识关系）
+    Prescription -- contains [label="1", penwidth=2];
+    contains -- SupplementRecord [label="N", penwidth=2];
+
+    // 医生添加补充记录
+    User -- adds [label="1"];
+    adds -- SupplementRecord [label="N"];
+
+    // 医生申请授权
+    User -- requests [label="1"];
+    requests -- AccessRequest [label="N"];
+
+    // 患者审批授权
+    User -- approves [label="1"];
+    approves -- AccessRequest [label="N"];
+
+    // 授权请求关联病历
+    AccessRequest -- relates_to [label="N"];
+    relates_to -- Prescription [label="1"];
+
+    // 患者下订单
+    User -- places [label="1"];
+    places -- DrugOrder [label="N"];
+
+    // 药店处理订单
+    User -- processes [label="1"];
+    processes -- DrugOrder [label="N"];
+
+    // 订单基于病历
+    DrugOrder -- based_on [label="N"];
+    based_on -- Prescription [label="1"];
+
+    // 布局控制
+    {rank=same; SupplementRecord; User; AccessRequest}
+    {rank=min; Prescription}
+    {rank=max; DrugOrder}
+
+    // 添加标题
+    label=<<br/><font point-size="16"><b>医疗信息管理系统 - 全局 E-R 图</b></font><br/>
+    <font point-size="12">Medical Information Management System - Global Entity-Relationship Diagram</font>>;
+    labelloc="t";
+    fontname="SimHei";
+}

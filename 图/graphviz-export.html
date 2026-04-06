@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全局E-R图 - 导出工具</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        #canvas-container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: inline-block;
+            max-width: 100%;
+            overflow: auto;
+        }
+        #svgContainer {
+            display: block;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        button:hover {
+            background: #555;
+        }
+        .info {
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <div id="svgContainer"></div>
+    </div>
+    <div class="controls">
+        <button onclick="downloadAsPNG()">下载为PNG图片（高清）</button>
+        <button onclick="downloadSVG()">下载SVG源文件</button>
+        <div class="info">提示：PNG图片使用3倍分辨率，确保打印清晰</div>
+    </div>
+
+    <script>
+        // 加载SVG文件
+        async function loadSVG() {
+            try {
+                const response = await fetch('graphviz.svg');
+                const svgText = await response.text();
+                document.getElementById('svgContainer').innerHTML = svgText;
+            } catch (error) {
+                console.error('加载SVG失败:', error);
+                alert('加载SVG文件失败，请确保graphviz.svg文件存在');
+            }
+        }
+
+        // 下载为高清PNG
+        function downloadAsPNG() {
+            const svgElement = document.querySelector('#svgContainer svg');
+            if (!svgElement) {
+                alert('SVG未加载');
+                return;
+            }
+
+            // 获取SVG尺寸
+            const bbox = svgElement.getBBox();
+            const width = parseFloat(svgElement.getAttribute('width'));
+            const height = parseFloat(svgElement.getAttribute('height'));
+
+            // 创建高分辨率canvas（3倍）
+            const scale = 3;
+            const canvas = document.createElement('canvas');
+            canvas.width = width * scale;
+            canvas.height = height * scale;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+            
+            // 设置白色背景
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, width, height);
+
+            // 将SVG转换为图片
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const svg = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svg);
+
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // 导出为PNG
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = '全局E-R图.png';
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    
+                    // 清理
+                    setTimeout(() => {
+                        URL.revokeObjectURL(link.href);
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                }, 'image/png', 1.0);
+            };
+            
+            img.onerror = function() {
+                alert('图片转换失败');
+                URL.revokeObjectURL(url);
+            };
+            
+            img.src = url;
+        }
+
+        // 下载SVG源文件
+        function downloadSVG() {
+            const svgElement = document.querySelector('#svgContainer svg');
+            if (!svgElement) {
+                alert('SVG未加载');
+                return;
+            }
+
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.download = '全局E-R图.svg';
+            link.href = url;
+            link.click();
+            
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        }
+
+        // 页面加载时自动加载SVG
+        window.addEventListener('load', loadSVG);
+    </script>
+</body>
+</html>

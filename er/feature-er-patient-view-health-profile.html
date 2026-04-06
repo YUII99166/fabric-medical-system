@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>功能：患者查看健康档案（ER 图）</title>
+  <style>
+    body { margin: 20px; background: #f0f0f0; font-family: SimSun, serif; }
+    #wrap { background: white; padding: 30px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    button { margin: 10px 5px; padding: 8px 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
+    button:hover { background: #45a049; }
+  </style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c" width="3200" height="2800"></canvas>
+</div>
+<div>
+<button onclick="save()">下载图片</button>
+<button onclick="copy()">复制到剪贴板</button>
+<button onclick="window.location.href='./index.html'">返回索引</button>
+</div>
+<script>
+// ========== 初始化Canvas ==========
+const c = document.getElementById('c');
+const g = c.getContext('2d', { alpha: false });
+g.imageSmoothingEnabled = false;
+g.fillStyle = '#ffffff';
+g.fillRect(0, 0, 3200, 2800);
+
+// ========== 绘图函数 ==========
+// 绘制矩形实体
+function entity(x, y, w, h, text) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.fillRect(x, y, w, h);
+    g.strokeRect(x, y, w, h);
+    g.fillStyle = '#000';
+    g.font = 'normal 60px 宋体, SimSun';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x + w/2, y + h/2);
+}
+
+// 绘制菱形关系
+function relation(x, y, w, h, text) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(x + w/2, y);
+    g.lineTo(x + w, y + h/2);
+    g.lineTo(x + w/2, y + h);
+    g.lineTo(x, y + h/2);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#000';
+    g.font = 'normal 52px 宋体, SimSun';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x + w/2, y + h/2);
+}
+
+// 绘制椭圆属性
+function attribute(x, y, w, h, text, isKey = false, rotation = 0) {
+    g.save();
+    
+    if (rotation !== 0) {
+        g.translate(x + w/2, y + h/2);
+        g.rotate(rotation * Math.PI / 180);
+        g.translate(-(x + w/2), -(y + h/2));
+    }
+    
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = isKey ? 4 : 2;
+    g.beginPath();
+    g.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#000';
+    g.font = 'normal 42px 宋体, SimSun';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    if (isKey) {
+        g.fillText(text, x + w/2, y + h/2);
+        const tw = g.measureText(text).width;
+        g.beginPath();
+        g.moveTo(x + w/2 - tw/2, y + h/2 + 20);
+        g.lineTo(x + w/2 + tw/2, y + h/2 + 20);
+        g.stroke();
+    } else {
+        g.fillText(text, x + w/2, y + h/2);
+    }
+    
+    g.restore();
+}
+
+// 绘制连接线
+function line(x1, y1, x2, y2) {
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+}
+
+// 绘制文本标签
+function label(text, x, y, size = 42, bold = false) {
+    g.fillStyle = '#000';
+    g.font = (bold ? 'bold ' : 'normal ') + size + 'px SimSun';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, x, y);
+}
+
+// ========== 边缘计算函数 ==========
+// 计算矩形边缘点
+function getRectEdgePoint(rectX, rectY, rectW, rectH, targetX, targetY) {
+    const centerX = rectX + rectW / 2;
+    const centerY = rectY + rectH / 2;
+    const dx = targetX - centerX;
+    const dy = targetY - centerY;
+    
+    if (dx === 0 && dy === 0) return { x: centerX, y: centerY };
+    
+    const angle = Math.atan2(dy, dx);
+    const absAngle = Math.abs(angle);
+    
+    if (absAngle < Math.atan2(rectH, rectW)) {
+        return { x: rectX + rectW, y: centerY + (rectW / 2) * Math.tan(angle) };
+    } else if (absAngle > Math.PI - Math.atan2(rectH, rectW)) {
+        return { x: rectX, y: centerY - (rectW / 2) * Math.tan(angle) };
+    } else if (angle > 0) {
+        return { x: centerX + (rectH / 2) / Math.tan(angle), y: rectY + rectH };
+    } else {
+        return { x: centerX - (rectH / 2) / Math.tan(angle), y: rectY };
+    }
+}
+
+// 计算椭圆边缘点
+function getEllipseEdgePoint(cx, cy, rx, ry, targetX, targetY) {
+    const dx = targetX - cx;
+    const dy = targetY - cy;
+    
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    
+    const angle = Math.atan2(dy, dx);
+    return {
+        x: cx + rx * Math.cos(angle),
+        y: cy + ry * Math.sin(angle)
+    };
+}
+
+// 计算菱形边缘点
+function getDiamondEdgePoint(cx, cy, w, h, targetX, targetY) {
+    const dx = targetX - cx;
+    const dy = targetY - cy;
+    
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    
+    const angle = Math.atan2(dy, dx);
+    const absAngle = Math.abs(angle);
+    const halfW = w / 2;
+    const halfH = h / 2;
+    
+    if (absAngle < Math.atan2(halfH, halfW)) {
+        const t = halfW / Math.abs(Math.cos(angle));
+        return { x: cx + t * Math.cos(angle), y: cy + t * Math.sin(angle) };
+    } else if (absAngle > Math.PI - Math.atan2(halfH, halfW)) {
+        const t = halfW / Math.abs(Math.cos(angle));
+        return { x: cx + t * Math.cos(angle), y: cy + t * Math.sin(angle) };
+    } else {
+        const t = halfH / Math.abs(Math.sin(angle));
+        return { x: cx + t * Math.cos(angle), y: cy + t * Math.sin(angle) };
+    }
+}
+
+// ========== 绘制ER图 ==========
+// 标题
+label('图 X.X 患者查看健康档案功能ER图', 1600, 100, 56, true);
+
+// 定义实体位置和尺寸 - 左中右水平布局
+const patientX = 600, patientY = 1400, patientW = 300, patientH = 160;
+const prescX = 1600, prescY = 1400, prescW = 300, prescH = 160;
+const orderX = 2600, orderY = 1400, orderW = 300, orderH = 160;
+
+// 绘制患者实体
+entity(patientX - patientW/2, patientY - patientH/2, patientW, patientH, '患者');
+
+// 患者属性 - 放射状分布
+const patientAttrs = [
+    { cx: patientX, cy: patientY - 350, rx: 90, ry: 45, text: '患者ID', key: true, rotation: 0 },
+    { cx: patientX - 280, cy: patientY - 250, rx: 80, ry: 40, text: '姓名', key: false, rotation: 0 },
+    { cx: patientX - 330, cy: patientY - 120, rx: 80, ry: 40, text: '角色', key: false, rotation: 0 },
+    { cx: patientX - 350, cy: patientY + 20, rx: 80, ry: 40, text: '性别', key: false, rotation: 0 },
+    { cx: patientX - 320, cy: patientY + 160, rx: 80, ry: 40, text: '电话', key: false, rotation: 0 },
+    { cx: patientX - 200, cy: patientY + 260, rx: 80, ry: 40, text: '组织', key: false, rotation: 0 },
+    { cx: patientX, cy: patientY + 320, rx: 100, ry: 40, text: '区块链ID', key: false, rotation: 0 }
+];
+
+patientAttrs.forEach(attr => {
+    attribute(attr.cx - attr.rx, attr.cy - attr.ry, attr.rx * 2, attr.ry * 2, attr.text, attr.key, attr.rotation);
+    const rectEdge = getRectEdgePoint(patientX - patientW/2, patientY - patientH/2, patientW, patientH, attr.cx, attr.cy);
+    const ellipseEdge = getEllipseEdgePoint(attr.cx, attr.cy, attr.rx, attr.ry, rectEdge.x, rectEdge.y);
+    line(rectEdge.x, rectEdge.y, ellipseEdge.x, ellipseEdge.y);
+});
+
+// 绘制病历实体
+entity(prescX - prescW/2, prescY - prescH/2, prescW, prescH, '病历');
+
+// 病历属性 - 适中数量，避开左右连接区域
+const prescAttrs = [
+    { cx: prescX, cy: prescY - 380, rx: 90, ry: 45, text: '病历ID', key: true, rotation: 0 },
+    { cx: prescX - 200, cy: prescY - 290, rx: 100, ry: 40, text: '病历编号', key: false, rotation: 0 },
+    { cx: prescX + 200, cy: prescY - 290, rx: 90, ry: 40, text: '患者姓名', key: false, rotation: 0 },
+    { cx: prescX - 260, cy: prescY - 170, rx: 80, ry: 40, text: '主诉', key: false, rotation: 0 },
+    { cx: prescX + 260, cy: prescY - 170, rx: 80, ry: 40, text: '诊断', key: false, rotation: 0 },
+    { cx: prescX - 280, cy: prescY - 50, rx: 90, ry: 40, text: '现病史', key: false, rotation: 0 },
+    { cx: prescX + 280, cy: prescY - 50, rx: 90, ry: 40, text: '医生姓名', key: false, rotation: 0 },
+    { cx: prescX - 280, cy: prescY + 70, rx: 90, ry: 40, text: '体格检查', key: false, rotation: 0 },
+    { cx: prescX + 280, cy: prescY + 70, rx: 90, ry: 40, text: '医院名称', key: false, rotation: 0 },
+    { cx: prescX - 260, cy: prescY + 190, rx: 80, ry: 40, text: '医嘱', key: false, rotation: 0 },
+    { cx: prescX + 260, cy: prescY + 190, rx: 90, ry: 40, text: '创建时间', key: false, rotation: 0 },
+    { cx: prescX - 200, cy: prescY + 290, rx: 100, ry: 40, text: '处方药品', key: false, rotation: 0 },
+    { cx: prescX + 200, cy: prescY + 290, rx: 110, ry: 40, text: '区块链交易ID', key: false, rotation: 0 }
+];
+
+prescAttrs.forEach(attr => {
+    attribute(attr.cx - attr.rx, attr.cy - attr.ry, attr.rx * 2, attr.ry * 2, attr.text, attr.key, attr.rotation);
+    const rectEdge = getRectEdgePoint(prescX - prescW/2, prescY - prescH/2, prescW, prescH, attr.cx, attr.cy);
+    const ellipseEdge = getEllipseEdgePoint(attr.cx, attr.cy, attr.rx, attr.ry, rectEdge.x, rectEdge.y);
+    line(rectEdge.x, rectEdge.y, ellipseEdge.x, ellipseEdge.y);
+});
+
+// 绘制药品订单实体
+entity(orderX - orderW/2, orderY - orderH/2, orderW, orderH, '药品订单');
+
+// 药品订单属性 - 适中数量
+const orderAttrs = [
+    { cx: orderX, cy: orderY - 350, rx: 90, ry: 45, text: '订单ID', key: true, rotation: 0 },
+    { cx: orderX + 280, cy: orderY - 250, rx: 90, ry: 40, text: '药品名称', key: false, rotation: 0 },
+    { cx: orderX + 330, cy: orderY - 120, rx: 80, ry: 40, text: '数量', key: false, rotation: 0 },
+    { cx: orderX + 350, cy: orderY + 20, rx: 80, ry: 40, text: '价格', key: false, rotation: 0 },
+    { cx: orderX + 320, cy: orderY + 160, rx: 80, ry: 40, text: '状态', key: false, rotation: 0 },
+    { cx: orderX + 200, cy: orderY + 260, rx: 90, ry: 40, text: '药店名称', key: false, rotation: 0 },
+    { cx: orderX, cy: orderY + 320, rx: 90, ry: 40, text: '创建时间', key: false, rotation: 0 }
+];
+
+orderAttrs.forEach(attr => {
+    attribute(attr.cx - attr.rx, attr.cy - attr.ry, attr.rx * 2, attr.ry * 2, attr.text, attr.key, attr.rotation);
+    const rectEdge = getRectEdgePoint(orderX - orderW/2, orderY - orderH/2, orderW, orderH, attr.cx, attr.cy);
+    const ellipseEdge = getEllipseEdgePoint(attr.cx, attr.cy, attr.rx, attr.ry, rectEdge.x, rectEdge.y);
+    line(rectEdge.x, rectEdge.y, ellipseEdge.x, ellipseEdge.y);
+});
+
+// 关系1：患者-查看-病历（水平方向）
+const rel1X = 1100, rel1Y = 1400, rel1W = 280, rel1H = 160;
+relation(rel1X - rel1W/2, rel1Y - rel1H/2, rel1W, rel1H, '查看');
+
+const patientToRel1Start = getRectEdgePoint(patientX - patientW/2, patientY - patientH/2, patientW, patientH, rel1X, rel1Y);
+const patientToRel1End = getDiamondEdgePoint(rel1X, rel1Y, rel1W, rel1H, patientToRel1Start.x, patientToRel1Start.y);
+line(patientToRel1Start.x, patientToRel1Start.y, patientToRel1End.x, patientToRel1End.y);
+
+const rel1ToPrescStart = getDiamondEdgePoint(rel1X, rel1Y, rel1W, rel1H, prescX, prescY);
+const rel1ToPrescEnd = getRectEdgePoint(prescX - prescW/2, prescY - prescH/2, prescW, prescH, rel1X, rel1Y);
+line(rel1ToPrescStart.x, rel1ToPrescStart.y, rel1ToPrescEnd.x, rel1ToPrescEnd.y);
+
+label('1', patientToRel1End.x + 30, rel1Y - 50, 46, true);
+label('n', rel1ToPrescStart.x - 30, rel1Y - 50, 46, true);
+
+// 关系2：病历-关联-药品订单（水平方向）
+const rel2X = 2100, rel2Y = 1400, rel2W = 280, rel2H = 160;
+relation(rel2X - rel2W/2, rel2Y - rel2H/2, rel2W, rel2H, '关联');
+
+const prescToRel2Start = getRectEdgePoint(prescX - prescW/2, prescY - prescH/2, prescW, prescH, rel2X, rel2Y);
+const prescToRel2End = getDiamondEdgePoint(rel2X, rel2Y, rel2W, rel2H, prescToRel2Start.x, prescToRel2Start.y);
+line(prescToRel2Start.x, prescToRel2Start.y, prescToRel2End.x, prescToRel2End.y);
+
+const rel2ToOrderStart = getDiamondEdgePoint(rel2X, rel2Y, rel2W, rel2H, orderX, orderY);
+const rel2ToOrderEnd = getRectEdgePoint(orderX - orderW/2, orderY - orderH/2, orderW, orderH, rel2X, rel2Y);
+line(rel2ToOrderStart.x, rel2ToOrderStart.y, rel2ToOrderEnd.x, rel2ToOrderEnd.y);
+
+label('1', prescToRel2End.x + 30, rel2Y - 50, 46, true);
+label('n', rel2ToOrderStart.x - 30, rel2Y - 50, 46, true);
+
+// ========== 导出功能 ==========
+function save() {
+    const scale = 2;
+    const temp = document.createElement('canvas');
+    temp.width = c.width * scale;
+    temp.height = c.height * scale;
+    const tg = temp.getContext('2d', { alpha: false });
+    tg.imageSmoothingEnabled = false;
+    tg.scale(scale, scale);
+    tg.drawImage(c, 0, 0);
+    const a = document.createElement('a');
+    a.download = '患者查看健康档案功能ER图.png';
+    a.href = temp.toDataURL('image/png', 1.0);
+    a.click();
+}
+
+async function copy() {
+    try {
+        const scale = 2;
+        const temp = document.createElement('canvas');
+        temp.width = c.width * scale;
+        temp.height = c.height * scale;
+        const tg = temp.getContext('2d', { alpha: false });
+        tg.imageSmoothingEnabled = false;
+        tg.scale(scale, scale);
+        tg.drawImage(c, 0, 0);
+        const b = await new Promise(r => temp.toBlob(r, 'image/png', 1.0));
+        await navigator.clipboard.write([new ClipboardItem({'image/png': b})]);
+        alert('已复制到剪贴板');
+    } catch(e) {
+        alert('复制失败：' + e.message);
+    }
+}
+</script>
+</body>
+</html>

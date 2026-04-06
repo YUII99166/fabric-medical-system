@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>药品订单管理模块流程图</title>
+<style>
+body { margin: 20px; background: #f0f0f0; font-family: SimSun, serif; }
+#wrap { background: white; padding: 30px; display: inline-block; }
+button { margin: 10px 5px; padding: 8px 16px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c" width="3400" height="3400"></canvas>
+</div>
+<div>
+<button onclick="save()">下载图片</button>
+<button onclick="copy()">复制</button>
+</div>
+<script>
+const c = document.getElementById('c');
+const g = c.getContext('2d', { alpha: false });
+
+g.imageSmoothingEnabled = false;
+g.fillStyle = '#ffffff';
+g.fillRect(0, 0, 3400, 3400);
+
+const GAP = 200;
+
+function box(x, y, w, h) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 2;
+    g.fillRect(x, y, w, h);
+    g.strokeRect(x, y, w, h);
+}
+
+function ellipse(x, y, w, h) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+}
+
+function diamond(x, y, w, h) {
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#000';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(x + w/2, y);
+    g.lineTo(x + w, y + h/2);
+    g.lineTo(x + w/2, y + h);
+    g.lineTo(x, y + h/2);
+    g.closePath();
+    g.fill();
+    g.stroke();
+}
+
+function arrow(x1, y1, x2, y2) {
+    g.strokeStyle = '#000';
+    g.fillStyle = '#000';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    g.beginPath();
+    g.moveTo(x2, y2);
+    g.lineTo(x2 - 10 * Math.cos(a - 0.5), y2 - 10 * Math.sin(a - 0.5));
+    g.lineTo(x2 - 10 * Math.cos(a + 0.5), y2 - 10 * Math.sin(a + 0.5));
+    g.closePath();
+    g.fill();
+}
+
+function txt(s, x, y) {
+    g.fillStyle = '#000';
+    g.font = 'normal 46px SimSun, 宋体, STSong, "Songti SC", serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(s, x, y);
+}
+
+// 左侧列中心X坐标
+const leftX = 600;
+// 右侧列中心X坐标
+const rightX = 2200;
+
+// 左侧列节点
+let leftY = 100;
+
+// 1. 开始
+ellipse(leftX - 130, leftY, 260, 130);
+txt('开始', leftX, leftY + 65);
+leftY += 130 + GAP;
+
+arrow(leftX, leftY - GAP, leftX, leftY);
+
+// 2. 药店创建药品订单
+box(leftX - 320, leftY, 640, 150);
+txt('药店创建药品订单', leftX, leftY + 50);
+txt('(关联处方ID和患者ID)', leftX, leftY + 105);
+leftY += 150 + GAP;
+
+arrow(leftX, leftY - GAP, leftX, leftY);
+
+// 3. 验证处方有效性
+const verifyY = leftY;
+box(leftX - 320, verifyY, 640, 150);
+txt('验证处方有效性', leftX, verifyY + 50);
+txt('(查询区块链处方记录)', leftX, verifyY + 105);
+leftY += 150 + GAP;
+
+arrow(leftX, verifyY + 150, leftX, leftY);
+
+// 4. 处方是否有效
+const diamondY = leftY;
+diamond(leftX - 280, diamondY, 560, 220);
+txt('处方是否有效', leftX, diamondY + 110);
+
+// 否分支（右侧）- 扩大距离
+const errorX = leftX + 650;
+arrow(leftX + 280, diamondY + 110, errorX - 220, diamondY + 110);
+txt('否', leftX + 400, diamondY + 70);
+box(errorX - 220, diamondY + 40, 440, 140);
+txt('返回处方', errorX, diamondY + 90);
+txt('无效错误', errorX, diamondY + 140);
+
+// 是分支
+leftY += 220 + GAP;
+arrow(leftX, diamondY + 220, leftX, leftY);
+txt('是', leftX - 60, diamondY + 300);
+
+// 5. 检查处方是否已使用
+box(leftX - 320, leftY, 640, 150);
+txt('检查处方是否已使用', leftX, leftY + 50);
+txt('(防止重复配药)', leftX, leftY + 105);
+leftY += 150 + GAP;
+
+// 从左侧连接到右侧（使用折线）
+const midX = (leftX + rightX) / 2 + 200; // 向右移动200像素
+arrow(leftX, leftY - GAP, leftX, leftY - GAP/2);
+arrow(leftX, leftY - GAP/2, midX, leftY - GAP/2);
+arrow(midX, leftY - GAP/2, midX, 100 + 65);
+arrow(midX, 100 + 65, rightX - 320, 100 + 65);
+
+// 右侧列节点
+let rightY = 100;
+
+// 6. 调用智能合约
+box(rightX - 320, rightY, 640, 150);
+txt('调用智能合约', rightX, rightY + 50);
+txt('CreateOrder', rightX, rightY + 105);
+rightY += 150 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 7. 订单信息写入区块链
+box(rightX - 320, rightY, 640, 150);
+txt('订单信息写入区块链', rightX, rightY + 50);
+txt('(包含药品、数量、价格)', rightX, rightY + 105);
+rightY += 150 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 8. 标记处方已使用
+box(rightX - 320, rightY, 640, 130);
+txt('标记处方已使用', rightX, rightY + 65);
+rightY += 130 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 9. 同步到MySQL数据库
+box(rightX - 320, rightY, 640, 130);
+txt('同步到MySQL数据库', rightX, rightY + 65);
+rightY += 130 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 10. 返回订单创建成功
+box(rightX - 320, rightY, 640, 150);
+txt('返回订单创建成功', rightX, rightY + 50);
+txt('患者可查看订单详情', rightX, rightY + 105);
+rightY += 150 + GAP;
+
+arrow(rightX, rightY - GAP, rightX, rightY);
+
+// 11. 结束
+ellipse(rightX - 130, rightY, 260, 130);
+txt('结束', rightX, rightY + 65);
+
+function save() {
+    const scale = 2;
+    const temp = document.createElement('canvas');
+    temp.width = c.width * scale;
+    temp.height = c.height * scale;
+    const tg = temp.getContext('2d', { alpha: false });
+    tg.imageSmoothingEnabled = false;
+    tg.scale(scale, scale);
+    tg.drawImage(c, 0, 0);
+    
+    const a = document.createElement('a');
+    a.download = '药品订单管理模块流程图.png';
+    a.href = temp.toDataURL('image/png', 1.0);
+    a.click();
+}
+
+async function copy() {
+    try {
+        const scale = 2;
+        const temp = document.createElement('canvas');
+        temp.width = c.width * scale;
+        temp.height = c.height * scale;
+        const tg = temp.getContext('2d', { alpha: false });
+        tg.imageSmoothingEnabled = false;
+        tg.scale(scale, scale);
+        tg.drawImage(c, 0, 0);
+        
+        const b = await new Promise(r => temp.toBlob(r, 'image/png', 1.0));
+        await navigator.clipboard.write([new ClipboardItem({'image/png': b})]);
+        alert('已复制');
+    } catch(e) {
+        alert('复制失败');
+    }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>区块链架构图 - 最终版</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            font-family: 'SimSun', '宋体', 'Microsoft YaHei', Arial, sans-serif;
+        }
+        #canvas-container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        canvas {
+            display: block;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #409EFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        button:hover {
+            background: #66b1ff;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="architectureCanvas" width="1200" height="800"></canvas>
+    </div>
+    <div class="controls">
+        <button onclick="downloadImage()">下载为PNG图片</button>
+        <button onclick="copyToClipboard()">复制到剪贴板</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('architectureCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 绘制圆角矩形
+        function roundRect(x, y, width, height, radius, fill, stroke, dash = []) {
+            ctx.save();
+            ctx.setLineDash(dash);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) {
+                ctx.fillStyle = fill;
+                ctx.fill();
+            }
+            if (stroke) {
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 绘制箭头
+        function drawArrow(fromX, fromY, toX, toY, color, dash = []) {
+            ctx.save();
+            ctx.setLineDash(dash);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            const arrowLength = 10;
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - arrowLength * Math.cos(angle - Math.PI / 6), 
+                       toY - arrowLength * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(toX - arrowLength * Math.cos(angle + Math.PI / 6), 
+                       toY - arrowLength * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 绘制双向箭头
+        function drawDoubleArrow(x1, y1, x2, y2, color) {
+            drawArrow(x1, y1, x2, y2, color);
+            drawArrow(x2, y2, x1, y1, color);
+        }
+
+        // 绘制文本
+        function drawText(text, x, y, align = 'center', color = '#000') {
+            ctx.save();
+            ctx.textAlign = align;
+            ctx.fillStyle = color;
+            ctx.fillText(text, x, y);
+            ctx.restore();
+        }
+
+        // 清空画布 - 白色背景
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 1. 顶部 - Hyperledger Fabric 联盟链
+        roundRect(200, 20, 580, 90, 10, '#ffffff', '#000');
+        ctx.font = '18px SimSun';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText('Hyperledger Fabric 联盟链网络', 490, 45);
+        ctx.font = '14px SimSun';
+        ctx.fillText('appchannel（应用通道）', 490, 65);
+        ctx.fillText('共享账本数据 | 执行智能合约 | 多机构协同', 490, 85);
+
+        // 2. 右侧 - 排序服务
+        roundRect(850, 20, 250, 90, 10, '#ffffff', '#000');
+        ctx.font = '18px SimSun';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText('排序服务', 975, 40);
+        ctx.font = '14px SimSun';
+        ctx.fillText('orderer.qq.com', 975, 60);
+        ctx.fillText('Raft 共识算法', 975, 75);
+        ctx.fillText('交易排序 | 区块生成 | 账本同步', 975, 90);
+
+        // 双向箭头连接
+        drawDoubleArrow(780, 65, 840, 65, '#000');
+
+        // 3. 中间 - 监管中心
+        roundRect(310, 170, 250, 170, 10, '#ffffff', '#000');
+        ctx.font = '18px SimSun';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText('RegCenterMSP - 监管中心', 435, 195);
+        ctx.font = '14px SimSun';
+        ctx.fillText('数据监管 | 审核准入 | 合规监督', 435, 215);
+        ctx.fillText('peer0.regcenter.com（主节点）', 435, 235);
+        ctx.fillText('peer1.regcenter.com（备节点）', 435, 250);
+        ctx.fillText('监管审核 | 数据监管', 435, 270);
+        ctx.fillText('交易审查 | 高可用', 435, 285);
+
+        // 右侧 - 背书策略
+        roundRect(620, 170, 210, 175, 10, '#ffffff', '#000', [5, 5]);
+        ctx.font = '18px SimSun';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText('背书策略', 725, 195);
+        ctx.font = '13px SimSun';
+        ctx.fillText('OutOf(3,', 725, 215);
+        ctx.fillText('  \'TaobaoMSP.member\',', 725, 230);
+        ctx.fillText('  \'JDMSP.member\',', 725, 245);
+        ctx.fillText('  \'WenjinMSP.member\',', 725, 260);
+        ctx.fillText('  \'RegCenterMSP.member\')', 725, 275);
+        ctx.fillText('4个组织中至少3个背书', 725, 295);
+        ctx.fillText('保证安全性和可信度', 725, 310);
+
+        // 连接线
+        drawArrow(490, 110, 435, 160, '#000');
+        drawArrow(540, 110, 725, 160, '#000', [5, 5]);
+
+        // 4. 底部三个已接入组织
+        // 协和医院
+        roundRect(40, 410, 250, 170, 10, '#ffffff', '#000');
+        ctx.font = '18px SimSun';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText('TaobaoMSP - 协和医院', 165, 435);
+        ctx.font = '14px SimSun';
+        ctx.fillText('开展病历管理', 165, 455);
+        ctx.fillText('peer0.taobao.com（主节点）', 165, 475);
+        ctx.fillText('peer1.taobao.com（备节点）', 165, 490);
+        ctx.fillText('病历存储 | 智能诊断', 165, 510);
+        ctx.fillText('交易背书 | 高可用', 165, 525);
+
+        // 301医院
+        roundRect(330, 410, 250, 170, 10, '#ffffff', '#000');
+        ctx.font = '18px SimSun';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText('JDMSP - 301医院', 455, 435);
+        ctx.font = '14px SimSun';
+        ctx.fillText('开展病历管理', 455, 455);
+        ctx.fillText('peer0.jd.com（主节点）', 455, 475);
+        ctx.fillText('peer1.jd.com（备节点）', 455, 490);
+        ctx.fillText('病历存储 | 智能诊断', 455, 510);
+        ctx.fillText('交易背书 | 高可用', 455, 525);
+
+        // 温江医疗中心
+        roundRect(620, 410, 250, 170, 10, '#ffffff', '#000');
+        ctx.font = '18px SimSun';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText('WenjinMSP - 温江社区医疗中心', 745, 435);
+        ctx.font = '14px SimSun';
+        ctx.fillText('开展基层医疗', 745, 455);
+        ctx.fillText('peer0.wenjin.com（主节点）', 745, 475);
+        ctx.fillText('peer1.wenjin.com（备节点）', 745, 490);
+        ctx.fillText('病历存储 | 智能诊断', 745, 510);
+        ctx.fillText('交易背书 | 高可用', 745, 525);
+
+        // 连接线到三个组织
+        drawArrow(370, 340, 165, 400, '#000');
+        drawArrow(435, 340, 455, 400, '#000');
+        drawArrow(500, 340, 745, 400, '#000');
+
+        // 5. 右下角 - 待接入组织（黑色框）
+        roundRect(910, 410, 260, 195, 10, '#ffffff', '#000');
+        ctx.font = '18px SimSun';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText('待接入组织（审核中）', 1040, 435);
+        ctx.font = '14px SimSun';
+        ctx.fillText('InsuranceMSP-温江人寿', 1040, 460);
+        ctx.fillText('peer.insurance.com', 1040, 475);
+        ctx.fillText('CDUTCMMSP-成都中医药大学-第二附属医院', 1040, 500);
+        ctx.fillText('peer.cdutcm.com', 1040, 515);
+        ctx.fillText('DrugRegMSP-四川省中医药管理局', 1040, 540);
+        ctx.fillText('peer.scda.gov.cn', 1040, 555);
+
+        // 虚线连接到待接入组织（和其他组织一样从监管中心连出）
+        drawArrow(530, 340, 1040, 400, '#000', [8, 8]);
+
+        // 下载图片
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = '区块链架构图-最终版.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // 复制到剪贴板
+        async function copyToClipboard() {
+            try {
+                const blob = await new Promise(resolve => canvas.toBlob(resolve));
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+                alert('已复制到剪贴板！');
+            } catch (err) {
+                alert('复制失败，请使用下载功能');
+            }
+        }
+    </script>
+</body>
+</html>

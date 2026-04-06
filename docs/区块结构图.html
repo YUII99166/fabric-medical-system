@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>区块结构图</title>
+<style>
+body {
+  margin: 0;
+  padding: 20px;
+  background: #f5f5f5;
+  font-family: 'Microsoft YaHei', Arial, sans-serif;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 10px;
+}
+.subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+svg {
+  display: block;
+  margin: 0 auto;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Hyperledger Fabric 区块结构图</h1>
+<div class="subtitle">基于华佗查看科比病历的访问日志实例 (TxID: efc0b928...)</div>
+
+<svg width="1100" height="1400" xmlns="http://www.w3.org/2000/svg">
+  <!-- 定义渐变和样式 -->
+  <defs>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- 标题：区块 12345 -->
+  <rect x="50" y="20" width="1000" height="1350" rx="8" fill="none" stroke="#667eea" stroke-width="3"/>
+  <rect x="50" y="20" width="1000" height="50" rx="8" fill="url(#headerGrad)"/>
+  <text x="550" y="52" font-size="24" font-weight="bold" fill="white" text-anchor="middle">区块 12345</text>
+
+  <!-- 区块头 -->
+  <rect x="80" y="100" width="940" height="180" rx="6" fill="#f8f9fa" stroke="#667eea" stroke-width="2"/>
+  <text x="100" y="130" font-size="18" font-weight="bold" fill="#667eea">📋 区块头 (Block Header)</text>
+  
+  <text x="120" y="160" font-size="14" fill="#333">区块号 (Number):</text>
+  <text x="350" y="160" font-size="14" fill="#666" font-family="Courier New">12345</text>
+  
+  <text x="120" y="185" font-size="14" fill="#333">前区块哈希 (PreviousHash):</text>
+  <text x="350" y="185" font-size="14" fill="#666" font-family="Courier New">a1b2c3d4e5f6789abcdef0123456789a...</text>
+  
+  <text x="120" y="210" font-size="14" fill="#333">数据哈希 (DataHash):</text>
+  <text x="350" y="210" font-size="14" fill="#666" font-family="Courier New">f6e5d4c3b2a1098765432109876543...</text>
+  
+  <text x="120" y="235" font-size="14" fill="#333">时间戳 (Timestamp):</text>
+  <text x="350" y="235" font-size="14" fill="#666" font-family="Courier New">2026-04-04 20:25:02</text>
+  
+  <text x="120" y="260" font-size="14" fill="#333">交易数量:</text>
+  <text x="350" y="260" font-size="14" fill="#666" font-family="Courier New">3 笔交易</text>
+
+  <!-- 区块数据 -->
+  <rect x="80" y="310" width="940" height="850" rx="6" fill="#f8f9fa" stroke="#667eea" stroke-width="2"/>
+  <text x="100" y="340" font-size="18" font-weight="bold" fill="#667eea">📦 区块数据 (Block Data) - 交易列表</text>
+
+  <!-- 交易 1 -->
+  <rect x="110" y="360" width="880" height="620" rx="6" fill="white" stroke="#ff6b6b" stroke-width="2"/>
+  <rect x="110" y="360" width="880" height="35" rx="6" fill="#ff6b6b"/>
+  <text x="130" y="383" font-size="16" font-weight="bold" fill="white">交易 1 ⭐ (华佗访问科比病历)</text>
+  
+  <text x="130" y="415" font-size="13" fill="#333">TxID:</text>
+  <text x="130" y="435" font-size="12" fill="#666" font-family="Courier New">efc0b928b2e9f817a2a33b1fa86697a34180dd21a0f24ad31ba1c337258a950d</text>
+
+  <!-- 交易头 -->
+  <rect x="130" y="455" width="840" height="120" rx="4" fill="#e3f2fd" stroke="#2196f3" stroke-width="1"/>
+  <text x="145" y="475" font-size="14" font-weight="bold" fill="#2196f3">交易头 (Transaction Header)</text>
+  <text x="160" y="500" font-size="12" fill="#333">通道ID: <tspan fill="#666" font-family="Courier New">appchannel</tspan></text>
+  <text x="160" y="520" font-size="12" fill="#333">交易类型: <tspan fill="#666" font-family="Courier New">ENDORSER_TRANSACTION</tspan></text>
+  <text x="160" y="540" font-size="12" fill="#333">创建者: <tspan fill="#666" font-family="Courier New">TaobaoMSP (华西医院)</tspan></text>
+  <text x="160" y="560" font-size="12" fill="#333">Nonce: <tspan fill="#666" font-family="Courier New">a1b2c3d4e5f6789a... (24字节随机数)</tspan></text>
+
+  <!-- 链码调用 -->
+  <rect x="130" y="590" width="840" height="80" rx="4" fill="#fff3e0" stroke="#ff9800" stroke-width="1"/>
+  <text x="145" y="610" font-size="14" font-weight="bold" fill="#ff9800">链码调用 (Chaincode Invocation)</text>
+  <text x="160" y="635" font-size="12" fill="#333">链码: <tspan fill="#666" font-family="Courier New">fabric-mims</tspan></text>
+  <text x="160" y="655" font-size="12" fill="#333">函数: <tspan fill="#666" font-family="Courier New">recordPrescriptionAccess</tspan></text>
+
+  <!-- 读写集 -->
+  <rect x="130" y="685" width="840" height="280" rx="4" fill="#f1f8e9" stroke="#8bc34a" stroke-width="1"/>
+  <text x="145" y="705" font-size="14" font-weight="bold" fill="#8bc34a">读写集 (Read-Write Set)</text>
+  
+  <text x="160" y="730" font-size="12" fill="#333" font-weight="bold">读集 (Reads):</text>
+  <text x="180" y="750" font-size="12" fill="#666" font-family="Courier New">[] (无读操作)</text>
+  
+  <text x="160" y="775" font-size="12" fill="#333" font-weight="bold">写集 (Writes):</text>
+  <text x="180" y="795" font-size="11" fill="#666" font-family="Courier New">Key: access-log-key\x007556dec5-c99f-4ddb-88c4-a8dba40ccbfb\x00</text>
+  <text x="180" y="815" font-size="11" fill="#666" font-family="Courier New">Value: {</text>
+  <text x="200" y="835" font-size="11" fill="#666" font-family="Courier New">"log_id": "7556dec5-c99f-4ddb-88c4-a8dba40ccbfb",</text>
+  <text x="200" y="855" font-size="11" fill="#666" font-family="Courier New">"patient_name": "科比·布莱恩特",</text>
+  <text x="200" y="875" font-size="11" fill="#666" font-family="Courier New">"accessor_name": "华佗",</text>
+  <text x="200" y="895" font-size="11" fill="#666" font-family="Courier New">"accessor_organization_name": "华西医院",</text>
+  <text x="200" y="915" font-size="11" fill="#666" font-family="Courier New">"access_type": "view",</text>
+  <text x="200" y="935" font-size="11" fill="#666" font-family="Courier New">"access_reason": "查看病历详情",</text>
+  <text x="200" y="955" font-size="11" fill="#666" font-family="Courier New">...</text>
+  <text x="180" y="975" font-size="11" fill="#666" font-family="Courier New">}</text>
+
+  <!-- 交易 2 和 3 -->
+  <rect x="110" y="1000" width="420" height="80" rx="6" fill="white" stroke="#ccc" stroke-width="1"/>
+  <text x="130" y="1025" font-size="14" fill="#333">交易 2</text>
+  <text x="130" y="1045" font-size="11" fill="#999" font-family="Courier New">TxID: abc123def456...</text>
+  <text x="130" y="1065" font-size="11" fill="#999">其他业务交易</text>
+
+  <rect x="570" y="1000" width="420" height="80" rx="6" fill="white" stroke="#ccc" stroke-width="1"/>
+  <text x="590" y="1025" font-size="14" fill="#333">交易 3</text>
+  <text x="590" y="1045" font-size="11" fill="#999" font-family="Courier New">TxID: 789ghi012jkl...</text>
+  <text x="590" y="1065" font-size="11" fill="#999">其他业务交易</text>
+
+  <!-- 区块元数据 -->
+  <rect x="80" y="1190" width="940" height="150" rx="6" fill="#f8f9fa" stroke="#667eea" stroke-width="2"/>
+  <text x="100" y="1220" font-size="18" font-weight="bold" fill="#667eea">🔐 区块元数据 (Block Metadata)</text>
+  
+  <text x="120" y="1250" font-size="14" fill="#333">Orderer 签名:</text>
+  <text x="350" y="1250" font-size="14" fill="#666">由 orderer.qq.com 签名</text>
+  
+  <text x="120" y="1275" font-size="14" fill="#333">交易验证结果:</text>
+  <text x="350" y="1275" font-size="14" fill="#4caf50" font-weight="bold">[VALID, VALID, VALID]</text>
+  
+  <text x="120" y="1300" font-size="14" fill="#333">提交信息:</text>
+  <text x="350" y="1300" font-size="14" fill="#666">所有 peer 节点已提交</text>
+  <text x="120" y="1320" font-size="14" fill="#333">区块大小:</text>
+  <text x="350" y="1320" font-size="14" fill="#666">约 15 KB</text>
+</svg>
+
+<!-- TxID 生成过程 -->
+<h2 style="color:#667eea;margin-top:40px;margin-bottom:20px;">🔑 TxID 生成过程</h2>
+<svg width="1100" height="200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Nonce -->
+  <rect x="50" y="50" width="200" height="100" rx="8" fill="#e3f2fd" stroke="#2196f3" stroke-width="2"/>
+  <text x="150" y="80" font-size="16" font-weight="bold" fill="#2196f3" text-anchor="middle">Nonce</text>
+  <text x="150" y="100" font-size="12" fill="#666" text-anchor="middle">(24字节随机数)</text>
+  <text x="150" y="120" font-size="10" fill="#999" text-anchor="middle" font-family="Courier New">a1b2c3d4e5f6...</text>
+
+  <!-- 加号 -->
+  <text x="280" y="105" font-size="32" fill="#667eea" font-weight="bold">+</text>
+
+  <!-- Creator -->
+  <rect x="320" y="50" width="200" height="100" rx="8" fill="#fff3e0" stroke="#ff9800" stroke-width="2"/>
+  <text x="420" y="80" font-size="16" font-weight="bold" fill="#ff9800" text-anchor="middle">Creator</text>
+  <text x="420" y="100" font-size="12" fill="#666" text-anchor="middle">(交易发起者)</text>
+  <text x="420" y="120" font-size="10" fill="#999" text-anchor="middle">TaobaoMSP + X.509证书</text>
+
+  <!-- 箭头 -->
+  <path d="M 540 100 L 600 100" stroke="#667eea" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  <text x="570" y="90" font-size="14" fill="#667eea" text-anchor="middle">SHA256</text>
+  
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#667eea" />
+    </marker>
+  </defs>
+
+  <!-- TxID -->
+  <rect x="620" y="50" width="430" height="100" rx="8" fill="#f1f8e9" stroke="#4caf50" stroke-width="3"/>
+  <text x="835" y="80" font-size="16" font-weight="bold" fill="#4caf50" text-anchor="middle">TxID (32字节)</text>
+  <text x="835" y="105" font-size="10" fill="#666" text-anchor="middle" font-family="Courier New">efc0b928b2e9f817a2a33b1fa86697a3</text>
+  <text x="835" y="125" font-size="10" fill="#666" text-anchor="middle" font-family="Courier New">4180dd21a0f24ad31ba1c337258a950d</text>
+</svg>
+
+<!-- 区块链连接 -->
+<h2 style="color:#667eea;margin-top:40px;margin-bottom:20px;">🔗 区块链连接示意</h2>
+<svg width="1100" height="180" xmlns="http://www.w3.org/2000/svg">
+  <!-- Block 0 -->
+  <rect x="50" y="40" width="180" height="100" rx="8" fill="#e8eaf6" stroke="#667eea" stroke-width="2"/>
+  <text x="140" y="70" font-size="14" font-weight="bold" fill="#667eea" text-anchor="middle">Block 0</text>
+  <text x="140" y="90" font-size="12" fill="#666" text-anchor="middle">创世区块</text>
+  <text x="140" y="110" font-size="10" fill="#999" text-anchor="middle">PrevHash: 0000...</text>
+
+  <!-- Arrow -->
+  <path d="M 240 90 L 290 90" stroke="#667eea" stroke-width="3" fill="none" marker-end="url(#arrowhead2)"/>
+  <defs>
+    <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#667eea" />
+    </marker>
+  </defs>
+
+  <!-- Block 1 -->
+  <rect x="300" y="40" width="180" height="100" rx="8" fill="#e8eaf6" stroke="#667eea" stroke-width="2"/>
+  <text x="390" y="70" font-size="14" font-weight="bold" fill="#667eea" text-anchor="middle">Block 1</text>
+  <text x="390" y="90" font-size="12" fill="#666" text-anchor="middle">区块 1</text>
+  <text x="390" y="110" font-size="10" fill="#999" text-anchor="middle">PrevHash: Hash0</text>
+
+  <!-- Arrow -->
+  <path d="M 490 90 L 540 90" stroke="#667eea" stroke-width="3" fill="none" marker-end="url(#arrowhead3)"/>
+  <text x="515" y="80" font-size="11" fill="#999" text-anchor="middle">...</text>
+  <defs>
+    <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#667eea" />
+    </marker>
+  </defs>
+
+  <!-- Block 12345 (Current) -->
+  <rect x="550" y="40" width="180" height="100" rx="8" fill="#ffebee" stroke="#ff6b6b" stroke-width="3"/>
+  <text x="640" y="70" font-size="14" font-weight="bold" fill="#ff6b6b" text-anchor="middle">Block 12345 ⭐</text>
+  <text x="640" y="90" font-size="12" fill="#666" text-anchor="middle">当前区块</text>
+  <text x="640" y="110" font-size="10" fill="#999" text-anchor="middle">PrevHash: Hash12344</text>
+
+  <!-- Arrow -->
+  <path d="M 740 90 L 790 90" stroke="#667eea" stroke-width="3" fill="none" marker-end="url(#arrowhead4)"/>
+  <defs>
+    <marker id="arrowhead4" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#667eea" />
+    </marker>
+  </defs>
+
+  <!-- Block 12346 -->
+  <rect x="800" y="40" width="180" height="100" rx="8" fill="#e8eaf6" stroke="#667eea" stroke-width="2"/>
+  <text x="890" y="70" font-size="14" font-weight="bold" fill="#667eea" text-anchor="middle">Block 12346</text>
+  <text x="890" y="90" font-size="12" fill="#666" text-anchor="middle">下一区块</text>
+  <text x="890" y="110" font-size="10" fill="#999" text-anchor="middle">PrevHash: Hash12345</text>
+</svg>
+
+<div style="margin-top:30px;padding:15px;background:#f0f0f0;border-radius:6px;font-size:13px;color:#666;">
+  <strong>说明：</strong><br>
+  • 每个区块包含：区块头、区块数据(交易列表)、区块元数据<br>
+  • TxID = SHA256(Nonce + Creator)，不包含交易内容<br>
+  • 数据以JSON格式存储在区块链中<br>
+  • 区块通过前区块哈希连接形成链，确保不可篡改
+</div>
+
+</div>
+</body>
+</html>
