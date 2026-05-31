@@ -66,8 +66,24 @@ wallet/
 application/server/keystore/
 create_users.sh
 
-# 图片/图表/文档（不上传 GitHub）
-图/
+# 图片/图表系统图（筛选后跟踪）
+图/*.html
+图/*.drawio
+图/*.puml
+图/*.dot
+图/*.svg
+图/*.pdf
+图/*.md
+图/*.py
+图/*.js
+图/*.json
+图/*.ps1
+图/*.sh
+图/*.bat
+图/*.txt
+图/.gitignore
+
+# 文档（不上传）
 毕业设计文档/
 docs/
 *.drawio
