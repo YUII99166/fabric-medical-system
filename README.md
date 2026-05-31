@@ -38,11 +38,7 @@
 
 ### 联盟链网络拓扑
 
-![系统架构图](图/system-architecture.png)
-
-### Fabric 联盟链网络
-
-![Fabric网络](图/fabric-network.png)
+![联盟链拓扑图](图/联盟链拓扑.png)
 
 系统由 **4 个联盟组织 + 1 个排序服务节点** 组成：
 
@@ -58,9 +54,9 @@
 
 ### 核心业务流程
 
-![授权流程图](图/authorization-flow.png)
+![病历管理](图/病历管理.png)
 
-![病历管理流程图](图/medical-record-flow.png)
+![访问记录溯源](图/访问记录溯源.png)
 
 ---
 
