@@ -18,26 +18,11 @@ type BlockChainMedicalInfoManageSystem struct {
 func (t *BlockChainMedicalInfoManageSystem) Init(stub shim.ChaincodeStubInterface) pb.Response { // stub 是智能合约中的一个对象，用于与区块链网络进行交互
 	fmt.Println("链码初始化")
 	//初始化默认数据
+	// 注意：生产环境中不应该在链码中硬编码测试账号
+	// 建议通过注册接口动态创建用户账号
 
-	var accountV2Ids = [7]string{"0feceb66ffc1", "1feceb66ffc1", "2b86b273ff31", "34735e3a261e", "4e17408561be", "5b227771d4dd", "6f2d121de37b"}
-	var userNameV2s = [7]string{"管理员", "医生", "①号病人", "②号病人", "③号病人", "药店", "保险机构"}
-	var usernames = [7]string{"admin", "doctor1", "patient1", "patient2", "patient3", "drugstore1", "insurance1"}
-	var passwords = [7]string{"admin123", "doctor123", "patient123", "patient123", "patient123", "drugstore123", "insurance123"}
-	var roles = [7]string{"admin", "doctor", "patient", "patient", "patient", "drugstore", "insurance"}
-	//初始化账号数据
-	for i, val := range accountV2Ids {
-		account := &model.AccountV2{
-			AccountId:   val,
-			AccountName: userNameV2s[i],
-			Username:    usernames[i],
-			Password:    passwords[i],
-			Role:        roles[i],
-		}
-		// 写入账本
-		if err := utils.WriteLedger(account, stub, model.AccountV2Key, []string{val}); err != nil {
-			return shim.Error(fmt.Sprintf("%s", err))
-		}
-	}
+	// 测试账号已移除，请通过系统注册功能创建用户
+	// 如需初始化管理员账号，请在部署后通过API接口创建
 
 	return shim.Success(nil)
 }

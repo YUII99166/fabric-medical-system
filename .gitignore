@@ -63,3 +63,23 @@ fabric-mims-main/network/system-genesis-block/
 *.pem
 *.key
 wallet/
+application/server/keystore/
+create_users.sh
+
+# 图片/图表/文档（不上传 GitHub）
+图/
+毕业设计文档/
+docs/
+*.drawio
+*.puml
+*.dot
+*.svg
+
+# Reasonix 本地技能配置
+.agents/
+
+# Fabric 本地工具链（仅 Linux 版用于部署，macOS 版跳过）
+network/hyperledger-fabric-darwin-amd64-*/
+
+# Go 中间编译产物
+application/server/cmd/

@@ -1,8 +1,0 @@
-10. Prescription_Access_Logs(病历访问日志表)
-
-Prescription_Access_Logs(日志ID, 病历ID, 病历编号, 患者ID, 患者姓名, 访问者ID, 访问者姓名, 访问者角色, 访问者组织MSPID, 访问者组织名称, 访问类型, 访问原因, IP地址, 用户代理, 区块链交易ID, 访问时间)
-
-主键：日志ID
-外键：病历ID → Prescription(病历ID)
-      患者ID → User(用户ID)
-      访问者ID → User(用户ID)

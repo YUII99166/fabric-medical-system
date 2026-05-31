@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/yaml.v2"
 	"os"
+	"time"
 )
 
 var (
@@ -38,8 +39,8 @@ func Init() error {
 		}
 
 		// 构建 MySQL 连接字符串
-		// 格式: user:password@tcp(host:port)/dbname
-		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		// charset/collation 在 DSN 中设置，驱动会对每个新连接自动应用
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=True&loc=Local",
 			config.DB.User,
 			config.DB.Password,
 			config.DB.Host,
@@ -47,12 +48,19 @@ func Init() error {
 			config.DB.DBName,
 		)
 
+		log.Printf("正在连接数据库: %s:%d/%s", config.DB.Host, config.DB.Port, config.DB.DBName)
+
 		// 连接数据库
 		DB, err = sql.Open("mysql", dsn)
 		if err != nil {
 			log.Printf("打开数据库连接失败: %v", err)
 			return
 		}
+
+		// 设置连接池参数，确保连接定期刷新
+		DB.SetMaxOpenConns(25)
+		DB.SetMaxIdleConns(5)
+		DB.SetConnMaxLifetime(5 * time.Minute)
 
 		// 测试连接
 		err = DB.Ping()
@@ -105,7 +113,7 @@ func initTables() error {
 		return err
 	}
 	log.Println("用户表初始化成功")
-	
+
 	// 创建病历访问日志表
 	createAccessLogsTableSQL := `
 	CREATE TABLE IF NOT EXISTS prescription_access_logs (
@@ -139,7 +147,7 @@ func initTables() error {
 		return err
 	}
 	log.Println("病历访问日志表初始化成功")
-	
+
 	return nil
 }
 

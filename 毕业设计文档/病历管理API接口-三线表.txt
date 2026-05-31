@@ -1,5 +1,0 @@
-接口名称	请求方法	请求路径	功能描述
-创建病历	POST	/prescription/create	医生创建新的电子病历
-查询病历列表	GET	/prescription/list	查询病历列表，支持分页和条件筛选
-查询病历详情	GET	/prescription/detail	根据病历ID查询病历详细信息
-搜索患者病历	POST	/prescription/search	根据患者姓名或ID搜索病历

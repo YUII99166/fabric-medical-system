@@ -1,6 +1,0 @@
-补充记录管理API接口
-
-接口名称	请求方法	请求路径	功能描述
-添加补充记录	POST	/supplement/add	医生为病历添加补充诊疗记录
-查询补充记录	POST	/supplement/list	查询指定病历的补充记录列表
-查询完整病历	POST	/supplement/history	查询病历及其所有补充记录

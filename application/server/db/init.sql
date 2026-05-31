@@ -17,17 +17,15 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_users_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 插入默认测试账户（可选）
--- 注意：密码已使用 SHA256 哈希处理
--- admin / admin123 -> 0a4d55a8d778e5022fab701977c5d840bbc486d0
--- doctor1 / doctor123 -> 6c7960e1234567890abcdef1234567890abcdef1
--- patient1 / patient123 -> 7d8a71f2345678901bcdef2345678901bcdef2
+-- 注意：生产环境中不应该插入默认测试账户
+-- 建议在系统部署后通过注册接口创建管理员账号
+-- 如需初始化管理员账号，请取消下面的注释并修改密码
 
-INSERT IGNORE INTO users (username, password, account_name, role) VALUES
-('admin', '0a4d55a8d778e5022fab701977c5d840bbc486d0', '管理员', '管理员'),
-('doctor1', '6c7960e1234567890abcdef1234567890abcdef1', '医生', '医生'),
-('patient1', '7d8a71f2345678901bcdef2345678901bcdef2', '①号病人', '病人'),
-('patient2', '7d8a71f2345678901bcdef2345678901bcdef2', '②号病人', '病人'),
-('patient3', '7d8a71f2345678901bcdef2345678901bcdef2', '③号病人', '病人'),
-('drugstore1', '8e9b82g3456789012cdef3456789012cdef3', '药店', '药店'),
-('insurance1', '9f0c93h456789012def456789012def4', '保险机构', '保险机构');
+-- 示例：创建初始管理员账号（请修改密码）
+-- INSERT IGNORE INTO users (username, password, account_name, role) VALUES
+-- ('admin', 'YOUR_HASHED_PASSWORD_HERE', '系统管理员', '管理员');
+
+-- 密码哈希说明：
+-- 系统使用 bcrypt 算法加密密码
+-- 请使用后端提供的密码加密工具生成密码哈希值
+-- 不要在生产环境中使用明文密码或简单密码

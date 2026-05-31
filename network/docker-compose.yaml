@@ -211,6 +211,10 @@ services:
       - GO111MODULE=auto
       - GOPROXY=https://goproxy.cn
       - CORE_PEER_ID=cli
+      # 默认连接 peer0.taobao.com
+      - CORE_PEER_ADDRESS=peer0.taobao.com:7051
+      - CORE_PEER_LOCALMSPID=TaobaoMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/taobao.com/users/Admin@taobao.com/msp
     command: /bin/bash
     volumes:
       - ./config:/etc/hyperledger/config

@@ -118,44 +118,47 @@
           </div>
         </el-card>
 
-        <!-- 药品订单时间线 -->
+        <!-- 转诊记录 -->
         <el-card class="timeline-card" style="margin-top: 20px;">
           <div slot="header" class="card-header">
-            <span><i class="el-icon-shopping-bag-2"></i> 药品订单</span>
+            <span><i class="el-icon-connection"></i> 转诊记录</span>
           </div>
           
-          <div v-if="drugOrders && drugOrders.length > 0" class="timeline-container">
-            <el-timeline>
-              <el-timeline-item
-                v-for="(order, index) in drugOrders"
-                :key="index"
-                :timestamp="order.created"
-                placement="top"
-                :color="getDrugOrderColor(index)"
-              >
-                <el-card class="timeline-item-card drug-order-card">
-                  <div class="timeline-item-content">
-                    <div class="timeline-drugstore">
-                      <i class="el-icon-shop"></i>
-                      {{ getDrugstoreName(order.drug_store) }}
-                    </div>
-                    <div class="timeline-drug">
-                      <i class="el-icon-goods"></i>
-                      药品：{{ order.Name }}
-                    </div>
-                    <div class="timeline-amount">
-                      <i class="el-icon-document-copy"></i>
-                      数量：{{ order.amount }} 份
-                    </div>
-                  </div>
-                </el-card>
-              </el-timeline-item>
-            </el-timeline>
+          <div v-if="supplementRecords && supplementRecords.length > 0" class="supplement-records-list">
+            <div 
+              v-for="(record, index) in supplementRecords" 
+              :key="index"
+              class="supplement-record-item"
+            >
+              <div class="record-header">
+                <el-tag 
+                  :type="getRecordTypeTag(record.recordType)" 
+                  size="small"
+                >
+                  {{ getRecordTypeText(record.recordType) }}
+                </el-tag>
+                <span class="record-date">{{ record.date }}</span>
+              </div>
+              <div class="record-content">
+                <div class="record-row">
+                  <i class="el-icon-office-building"></i>
+                  <span>{{ record.hospital }}</span>
+                </div>
+                <div class="record-row">
+                  <i class="el-icon-user-solid"></i>
+                  <span>{{ record.doctor }}</span>
+                </div>
+                <div class="record-row">
+                  <i class="el-icon-document-checked"></i>
+                  <span>{{ record.diagnosis }}</span>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div v-else class="empty-state">
-            <i class="el-icon-shopping-bag-2" style="font-size: 48px; color: #dcdfe6;"></i>
-            <p style="color: #909399; margin-top: 10px;">暂无药品订单</p>
+            <i class="el-icon-connection" style="font-size: 48px; color: #dcdfe6;"></i>
+            <p style="color: #909399; margin-top: 10px;">暂无转诊记录</p>
           </div>
         </el-card>
       </el-col>
@@ -184,13 +187,69 @@
             <span><i class="el-icon-data-line"></i> 就医医院分布</span>
           </div>
           
-          <div v-if="profile.hospitalStats && profile.hospitalStats.length > 0" class="chart-container">
+          <!-- 医院统计列表 -->
+          <div v-if="profile.hospitalStats && profile.hospitalStats.length > 0" class="hospital-stats-list">
+            <div 
+              v-for="(item, index) in profile.hospitalStats" 
+              :key="index"
+              class="hospital-stat-item"
+            >
+              <div class="hospital-info">
+                <i class="el-icon-office-building"></i>
+                <span class="hospital-name">{{ item.hospital }}</span>
+              </div>
+              <div class="hospital-count">
+                <el-tag type="primary" size="small">{{ item.count }} 次</el-tag>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 图表（可选） -->
+          <div v-if="profile.hospitalStats && profile.hospitalStats.length > 0" class="chart-container" style="margin-top: 20px;">
             <div ref="hospitalChart" class="chart"></div>
           </div>
           
           <div v-else class="empty-state">
             <i class="el-icon-data-line" style="font-size: 48px; color: #dcdfe6;"></i>
             <p style="color: #909399; margin-top: 10px;">暂无医院统计数据</p>
+          </div>
+        </el-card>
+
+        <!-- 药品订单 -->
+        <el-card class="chart-card" style="margin-top: 20px;">
+          <div slot="header" class="card-header">
+            <span><i class="el-icon-shopping-bag-2"></i> 药品订单</span>
+          </div>
+          
+          <div v-if="drugOrders && drugOrders.length > 0" class="drug-orders-list">
+            <div 
+              v-for="(order, index) in drugOrders" 
+              :key="index"
+              class="drug-order-item"
+            >
+              <div class="order-header">
+                <span class="order-date">{{ order.created }}</span>
+              </div>
+              <div class="order-content">
+                <div class="order-row">
+                  <i class="el-icon-shop"></i>
+                  <span>{{ getDrugstoreName(order.drug_store) }}</span>
+                </div>
+                <div class="order-row">
+                  <i class="el-icon-goods"></i>
+                  <span>{{ order.Name }}</span>
+                </div>
+                <div class="order-row">
+                  <i class="el-icon-document-copy"></i>
+                  <span>数量：{{ order.amount }} 份</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="empty-state">
+            <i class="el-icon-shopping-bag-2" style="font-size: 48px; color: #dcdfe6;"></i>
+            <p style="color: #909399; margin-top: 10px;">暂无药品订单</p>
           </div>
         </el-card>
       </el-col>
@@ -202,6 +261,7 @@
 import { getHealthProfile } from '@/api/patient'
 import { queryDrugOrderList } from '@/api/drugOrder'
 import { queryAccountList } from '@/api/accountV2'
+import { getAccountMap } from '@/utils/accountCache'
 import { mapGetters } from 'vuex'
 import * as echarts from 'echarts'
 
@@ -221,6 +281,7 @@ export default {
         hospitalStats: []
       },
       drugOrders: [],
+      supplementRecords: [], // 补充记录（转诊、复诊、急诊）
       accountMap: {},
       diseaseChart: null,
       hospitalChart: null
@@ -253,6 +314,79 @@ export default {
     }
   },
   methods: {
+    // 从时间线中提取补充记录
+    extractSupplementRecords() {
+      if (!this.profile.timeline || this.profile.timeline.length === 0) {
+        this.supplementRecords = []
+        return
+      }
+      
+      // 筛选出带有类型标识的记录（[转诊]、[复诊]、[急诊]、[授权转诊]）
+      this.supplementRecords = this.profile.timeline
+        .filter(item => {
+          return item.diagnosis && (
+            item.diagnosis.includes('[转诊]') ||
+            item.diagnosis.includes('[复诊]') ||
+            item.diagnosis.includes('[急诊]') ||
+            item.diagnosis.includes('[授权转诊]')
+          )
+        })
+        .map(item => {
+          // 提取记录类型
+          let recordType = 'consultation' // 默认转诊
+          if (item.diagnosis.includes('[授权转诊]')) {
+            recordType = 'authorization' // 授权转诊
+          } else if (item.diagnosis.includes('[转诊]')) {
+            recordType = 'consultation'
+          } else if (item.diagnosis.includes('[复诊]')) {
+            recordType = 'followup'
+          } else if (item.diagnosis.includes('[急诊]')) {
+            recordType = 'emergency'
+          }
+          
+          // 去掉诊断中的类型标识
+          const diagnosis = item.diagnosis
+            .replace('[授权转诊]', '')
+            .replace('[转诊]', '')
+            .replace('[复诊]', '')
+            .replace('[急诊]', '')
+            .trim()
+          
+          return {
+            date: item.date,
+            hospital: item.hospital,
+            doctor: item.doctor,
+            diagnosis: diagnosis,
+            recordType: recordType,
+            prescId: item.prescId
+          }
+        })
+      
+      console.log('📋 提取到补充记录:', this.supplementRecords.length, '条')
+    },
+
+    // 获取记录类型标签颜色
+    getRecordTypeTag(recordType) {
+      const tagMap = {
+        'authorization': 'primary',  // 授权转诊 - 蓝色
+        'consultation': 'warning',   // 转诊 - 橙色
+        'followup': 'success',       // 复诊 - 绿色
+        'emergency': 'danger'        // 急诊 - 红色
+      }
+      return tagMap[recordType] || 'info'
+    },
+
+    // 获取记录类型文本
+    getRecordTypeText(recordType) {
+      const textMap = {
+        'authorization': '授权转诊',
+        'consultation': '转诊',
+        'followup': '复诊',
+        'emergency': '急诊'
+      }
+      return textMap[recordType] || recordType
+    },
+
     // 从缓存加载账户列表（快速）
     async loadAccountListFromCache() {
       try {
@@ -276,9 +410,23 @@ export default {
       try {
         const response = await getHealthProfile(this.timeRange)
         
+        console.log('📊 健康档案API响应:', response)
+        
         if (response.code === 200) {
           this.profile = response.data
+          
+          console.log('✅ 健康档案数据已加载:')
+          console.log('  - 病历总数:', this.profile.totalPrescriptions)
+          console.log('  - 就诊次数:', this.profile.totalVisits)
+          console.log('  - 时间线记录数:', this.profile.timeline?.length)
+          console.log('  - 疾病统计数:', this.profile.diseaseStats?.length)
+          console.log('  - 医院统计数:', this.profile.hospitalStats?.length)
+          
+          // 从时间线中提取补充记录
+          this.extractSupplementRecords()
+          
           this.$nextTick(() => {
+            console.log('🎨 开始初始化图表...')
             this.initCharts()
           })
           this.loading = false
@@ -435,24 +583,37 @@ export default {
 
     // 初始化图表
     initCharts() {
+      console.log('🎨 initCharts 被调用')
+      console.log('  - diseaseStats:', this.profile.diseaseStats)
+      console.log('  - hospitalStats:', this.profile.hospitalStats)
       this.initDiseaseChart()
       this.initHospitalChart()
     },
 
     // 初始化疾病分布图表
     initDiseaseChart() {
+      console.log('📊 initDiseaseChart 被调用')
+      console.log('  - diseaseStats长度:', this.profile.diseaseStats?.length)
+      
       if (!this.profile.diseaseStats || this.profile.diseaseStats.length === 0) {
+        console.log('⚠️ 疾病统计数据为空，跳过图表初始化')
         return
       }
 
       const chartDom = this.$refs.diseaseChart
-      if (!chartDom) return
+      console.log('  - chartDom:', chartDom)
+      
+      if (!chartDom) {
+        console.log('❌ 找不到疾病图表DOM元素')
+        return
+      }
 
       if (this.diseaseChart) {
         this.diseaseChart.dispose()
       }
 
       this.diseaseChart = echarts.init(chartDom)
+      console.log('  - 疾病图表实例已创建:', this.diseaseChart)
 
       const option = {
         tooltip: {
@@ -499,6 +660,8 @@ export default {
       }
 
       this.diseaseChart.setOption(option)
+      
+      console.log('✅ 疾病分布图表已初始化')
 
       // 响应式
       window.addEventListener('resize', () => {
@@ -510,18 +673,28 @@ export default {
 
     // 初始化医院分布图表
     initHospitalChart() {
+      console.log('🏥 initHospitalChart 被调用')
+      console.log('  - hospitalStats长度:', this.profile.hospitalStats?.length)
+      
       if (!this.profile.hospitalStats || this.profile.hospitalStats.length === 0) {
+        console.log('⚠️ 医院统计数据为空，跳过图表初始化')
         return
       }
 
       const chartDom = this.$refs.hospitalChart
-      if (!chartDom) return
+      console.log('  - chartDom:', chartDom)
+      
+      if (!chartDom) {
+        console.log('❌ 找不到医院图表DOM元素')
+        return
+      }
 
       if (this.hospitalChart) {
         this.hospitalChart.dispose()
       }
 
       this.hospitalChart = echarts.init(chartDom)
+      console.log('  - 医院图表实例已创建:', this.hospitalChart)
 
       const option = {
         tooltip: {
@@ -575,6 +748,8 @@ export default {
       }
 
       this.hospitalChart.setOption(option)
+      
+      console.log('✅ 医院分布图表已初始化')
 
       // 响应式
       window.addEventListener('resize', () => {
@@ -755,6 +930,155 @@ export default {
       .chart {
         width: 100%;
         height: 300px;
+      }
+    }
+
+    // 医院统计列表
+    .hospital-stats-list {
+      .hospital-stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        background: #f9fafc;
+        border-radius: 6px;
+        border-left: 3px solid #667eea;
+        transition: all 0.3s;
+
+        &:hover {
+          background: #f0f2f5;
+          transform: translateX(5px);
+        }
+
+        .hospital-info {
+          display: flex;
+          align-items: center;
+          flex: 1;
+
+          i {
+            font-size: 18px;
+            color: #667eea;
+            margin-right: 10px;
+          }
+
+          .hospital-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #303133;
+          }
+        }
+
+        .hospital-count {
+          .el-tag {
+            font-weight: 600;
+          }
+        }
+      }
+    }
+
+    // 补充记录列表
+    .supplement-records-list {
+      .supplement-record-item {
+        padding: 15px;
+        margin-bottom: 15px;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+        border-radius: 8px;
+        border-left: 4px solid #f56c6c;
+        transition: all 0.3s;
+
+        &:hover {
+          box-shadow: 0 2px 12px rgba(245, 108, 108, 0.2);
+          transform: translateY(-2px);
+        }
+
+        .record-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          padding-bottom: 10px;
+          border-bottom: 1px dashed #e4e7ed;
+
+          .el-tag {
+            font-weight: 600;
+          }
+
+          .record-date {
+            font-size: 13px;
+            color: #909399;
+          }
+        }
+
+        .record-content {
+          .record-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #606266;
+
+            i {
+              font-size: 16px;
+              color: #f56c6c;
+              margin-right: 8px;
+              width: 20px;
+            }
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
+      }
+    }
+
+    // 药品订单列表
+    .drug-orders-list {
+      .drug-order-item {
+        padding: 15px;
+        margin-bottom: 15px;
+        background: linear-gradient(135deg, #f0fff4 0%, #ffffff 100%);
+        border-radius: 8px;
+        border-left: 4px solid #43e97b;
+        transition: all 0.3s;
+
+        &:hover {
+          box-shadow: 0 2px 12px rgba(67, 233, 123, 0.2);
+          transform: translateY(-2px);
+        }
+
+        .order-header {
+          margin-bottom: 12px;
+          padding-bottom: 10px;
+          border-bottom: 1px dashed #e4e7ed;
+
+          .order-date {
+            font-size: 13px;
+            color: #909399;
+          }
+        }
+
+        .order-content {
+          .order-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #606266;
+
+            i {
+              font-size: 16px;
+              color: #43e97b;
+              margin-right: 8px;
+              width: 20px;
+            }
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
       }
     }
 

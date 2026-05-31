@@ -26,6 +26,39 @@ type Prescription struct {
 	Created          string `json:"created"`
 }
 
+// SupplementRecord 补充记录结构（从区块链返回）
+type SupplementRecord struct {
+	ID                     string `json:"id"`
+	OriginalPrescriptionID string `json:"original_prescription_id"`
+	RecordType             string `json:"record_type"`
+	PatientID              string `json:"patient_id"`
+	PatientName            string `json:"patient_name"`
+	Diagnosis              string `json:"diagnosis"`
+	DoctorID               string `json:"doctor_id"`
+	DoctorName             string `json:"doctor_name"`
+	OrganizationID         string `json:"organization_id"`
+	OrganizationName       string `json:"organization_name"`
+	Department             string `json:"department"`
+	Created                string `json:"created"`
+}
+
+// Authorization 授权记录结构（从区块链返回）
+type Authorization struct {
+	ID             string `json:"id"`
+	PrescriptionID string `json:"prescription_id"`
+	PatientID      string `json:"patient_id"`
+	PatientName    string `json:"patient_name"`
+	DoctorID       string `json:"doctor_id"`
+	DoctorName     string `json:"doctor_name"`
+	DoctorOrg      string `json:"doctor_org"`           // 医生所属组织ID
+	DoctorOrgName  string `json:"doctor_org_name"`      // 医生所属组织名称
+	Reason         string `json:"reason"`
+	Status         string `json:"status"`
+	RequestTime    string `json:"request_time"`         // 申请时间
+	ResponseTime   string `json:"response_time"`        // 响应时间
+	TxID           string `json:"tx_id"`
+}
+
 // HealthProfile 健康档案统计数据
 type HealthProfile struct {
 	TotalPrescriptions int                  `json:"totalPrescriptions"` // 病历总数
@@ -86,18 +119,40 @@ func GetHealthProfile(c *gin.Context) {
 		return
 	}
 	
-	fmt.Printf("获取到 %d 条病历，时间范围: %s\n", len(prescriptions), timeRange)
+	fmt.Printf("获取到 %d 条原始病历，时间范围: %s\n", len(prescriptions), timeRange)
+	
+	// 获取补充记录数据
+	supplementRecords, err := getSupplementRecordsFromBlockchain(query.AccountID)
+	if err != nil {
+		fmt.Printf("获取补充记录失败: %v\n", err)
+		// 补充记录获取失败不影响主流程，继续执行
+		supplementRecords = []SupplementRecord{}
+	}
+	
+	fmt.Printf("获取到 %d 条补充记录\n", len(supplementRecords))
+	
+	// 获取授权记录（作为转诊记录）
+	authorizations, err := getAuthorizationsFromBlockchain(query.AccountID)
+	if err != nil {
+		fmt.Printf("获取授权记录失败: %v\n", err)
+		// 授权记录获取失败不影响主流程，继续执行
+		authorizations = []Authorization{}
+	}
+	
+	fmt.Printf("获取到 %d 条授权记录（转诊）\n", len(authorizations))
 	
 	// 根据时间范围筛选
 	prescriptions = filterByTimeRange(prescriptions, timeRange)
+	supplementRecords = filterSupplementRecordsByTimeRange(supplementRecords, timeRange)
+	authorizations = filterAuthorizationsByTimeRange(authorizations, timeRange)
 	
-	fmt.Printf("筛选后 %d 条病历\n", len(prescriptions))
+	fmt.Printf("筛选后: %d 条原始病历, %d 条补充记录, %d 条授权记录\n", len(prescriptions), len(supplementRecords), len(authorizations))
 	
-	// 计算健康档案统计
-	profile := calculateHealthProfile(prescriptions, query.AccountID)
+	// 计算健康档案统计（包含补充记录和授权记录）
+	profile := calculateHealthProfile(prescriptions, supplementRecords, authorizations, query.AccountID)
 	
-	fmt.Printf("统计完成: 病历=%d, 授权医生=%d, 订单=%d\n", 
-		profile.TotalPrescriptions, profile.AuthorizedDoctors, profile.TotalOrders)
+	fmt.Printf("统计完成: 病历=%d, 就诊次数=%d, 授权医生=%d, 订单=%d\n", 
+		profile.TotalPrescriptions, profile.TotalVisits, profile.AuthorizedDoctors, profile.TotalOrders)
 	
 	appG.Response(http.StatusOK, "成功", profile)
 }
@@ -159,6 +214,127 @@ func getPrescriptionsFromBlockchain(patientID string) ([]Prescription, error) {
 	return nil, fmt.Errorf("所有重试都失败了")
 }
 
+// getSupplementRecordsFromBlockchain 从区块链获取补充记录数据
+func getSupplementRecordsFromBlockchain(patientID string) ([]SupplementRecord, error) {
+	var bodyBytes [][]byte
+	bodyBytes = append(bodyBytes, []byte(patientID))
+	
+	// 添加重试机制
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		// 调用智能合约查询补充记录 - 使用 querySupplementRecords 函数
+		resp, err := bc.ChannelQuery("querySupplementRecords", bodyBytes)
+		if err != nil {
+			fmt.Printf("查询补充记录失败 (第%d次): %v\n", i+1, err)
+			
+			// 检查是否是可重试的错误
+			errorStr := err.Error()
+			isRetryableError := strings.Contains(errorStr, "txid") && strings.Contains(errorStr, "exists") ||
+				strings.Contains(errorStr, "CONNECTION_FAILED") ||
+				strings.Contains(errorStr, "TRANSIENT_FAILURE") ||
+				strings.Contains(errorStr, "cannot retrieve package") ||
+				strings.Contains(errorStr, "chaincode") ||
+				strings.Contains(errorStr, "timeout") ||
+				strings.Contains(errorStr, "unavailable")
+			
+			if isRetryableError && i < maxRetries-1 {
+				fmt.Printf("检测到可重试错误，等待后重试\n")
+				time.Sleep(time.Duration(i+1) * 200 * time.Millisecond)
+				continue
+			}
+			
+			return nil, err
+		}
+		
+		// 打印原始响应
+		responseStr := string(resp.Payload)
+		fmt.Printf("补充记录响应: %s\n", responseStr)
+		
+		// 如果响应是 "null" 或空，返回空数组
+		if responseStr == "null" || responseStr == "" || responseStr == "[]" {
+			fmt.Printf("没有找到补充记录\n")
+			return []SupplementRecord{}, nil
+		}
+		
+		var records []SupplementRecord
+		if err = json.Unmarshal(resp.Payload, &records); err != nil {
+			fmt.Printf("补充记录JSON解析失败: %v\n", err)
+			// 如果解析失败，返回空数组而不是错误
+			return []SupplementRecord{}, nil
+		}
+		
+		fmt.Printf("成功获取 %d 条补充记录\n", len(records))
+		return records, nil
+	}
+	
+	return nil, fmt.Errorf("所有重试都失败了")
+}
+
+// getAuthorizationsFromBlockchain 从区块链获取授权记录数据
+func getAuthorizationsFromBlockchain(patientID string) ([]Authorization, error) {
+	var bodyBytes [][]byte
+	bodyBytes = append(bodyBytes, []byte(patientID))
+	bodyBytes = append(bodyBytes, []byte("patient")) // 角色参数
+	
+	// 添加重试机制
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		// 调用智能合约查询授权记录 - 使用 queryAccessRequests 函数
+		resp, err := bc.ChannelQuery("queryAccessRequests", bodyBytes)
+		if err != nil {
+			fmt.Printf("查询授权记录失败 (第%d次): %v\n", i+1, err)
+			
+			// 检查是否是可重试的错误
+			errorStr := err.Error()
+			isRetryableError := strings.Contains(errorStr, "txid") && strings.Contains(errorStr, "exists") ||
+				strings.Contains(errorStr, "CONNECTION_FAILED") ||
+				strings.Contains(errorStr, "TRANSIENT_FAILURE") ||
+				strings.Contains(errorStr, "cannot retrieve package") ||
+				strings.Contains(errorStr, "chaincode") ||
+				strings.Contains(errorStr, "timeout") ||
+				strings.Contains(errorStr, "unavailable")
+			
+			if isRetryableError && i < maxRetries-1 {
+				fmt.Printf("检测到可重试错误，等待后重试\n")
+				time.Sleep(time.Duration(i+1) * 200 * time.Millisecond)
+				continue
+			}
+			
+			return nil, err
+		}
+		
+		// 打印原始响应
+		responseStr := string(resp.Payload)
+		fmt.Printf("授权记录响应: %s\n", responseStr)
+		
+		// 如果响应是 "null" 或空，返回空数组
+		if responseStr == "null" || responseStr == "" || responseStr == "[]" {
+			fmt.Printf("没有找到授权记录\n")
+			return []Authorization{}, nil
+		}
+		
+		var authorizations []Authorization
+		if err = json.Unmarshal(resp.Payload, &authorizations); err != nil {
+			fmt.Printf("授权记录JSON解析失败: %v\n", err)
+			// 如果解析失败，返回空数组而不是错误
+			return []Authorization{}, nil
+		}
+		
+		// 只保留已批准的授权记录
+		var approvedAuthorizations []Authorization
+		for _, auth := range authorizations {
+			if auth.Status == "approved" {
+				approvedAuthorizations = append(approvedAuthorizations, auth)
+			}
+		}
+		
+		fmt.Printf("成功获取 %d 条授权记录（已批准: %d 条）\n", len(authorizations), len(approvedAuthorizations))
+		return approvedAuthorizations, nil
+	}
+	
+	return nil, fmt.Errorf("所有重试都失败了")
+}
+
 // filterByTimeRange 根据时间范围筛选病历
 func filterByTimeRange(prescriptions []Prescription, timeRange string) []Prescription {
 	if timeRange == "all" {
@@ -208,11 +384,100 @@ func filterByTimeRange(prescriptions []Prescription, timeRange string) []Prescri
 	return filtered
 }
 
+// filterSupplementRecordsByTimeRange 根据时间范围筛选补充记录
+func filterSupplementRecordsByTimeRange(records []SupplementRecord, timeRange string) []SupplementRecord {
+	if timeRange == "all" {
+		return records
+	}
+	
+	now := time.Now()
+	var cutoffDate time.Time
+	
+	switch timeRange {
+	case "1m":
+		cutoffDate = now.AddDate(0, -1, 0)
+	case "3m":
+		cutoffDate = now.AddDate(0, -3, 0)
+	case "1y":
+		cutoffDate = now.AddDate(-1, 0, 0)
+	default:
+		return records
+	}
+	
+	var filtered []SupplementRecord
+	for _, record := range records {
+		var recordTime time.Time
+		var err error
+		
+		recordTime, err = time.Parse("2006-01-02 15:04:05", record.Created)
+		if err != nil {
+			recordTime, err = time.Parse("2006-01-02", record.Created)
+			if err != nil {
+				fmt.Printf("无法解析补充记录时间: %s, 错误: %v\n", record.Created, err)
+				continue
+			}
+		}
+		
+		if recordTime.After(cutoffDate) || recordTime.Equal(cutoffDate) {
+			filtered = append(filtered, record)
+		}
+	}
+	
+	fmt.Printf("补充记录时间筛选: 原始=%d, 筛选后=%d\n", len(records), len(filtered))
+	
+	return filtered
+}
+
+// filterAuthorizationsByTimeRange 根据时间范围筛选授权记录
+func filterAuthorizationsByTimeRange(authorizations []Authorization, timeRange string) []Authorization {
+	if timeRange == "all" {
+		return authorizations
+	}
+	
+	now := time.Now()
+	var cutoffDate time.Time
+	
+	switch timeRange {
+	case "1m":
+		cutoffDate = now.AddDate(0, -1, 0)
+	case "3m":
+		cutoffDate = now.AddDate(0, -3, 0)
+	case "1y":
+		cutoffDate = now.AddDate(-1, 0, 0)
+	default:
+		return authorizations
+	}
+	
+	var filtered []Authorization
+	for _, auth := range authorizations {
+		var authTime time.Time
+		var err error
+		
+		// 使用 RequestTime 字段
+		authTime, err = time.Parse("2006-01-02 15:04:05", auth.RequestTime)
+		if err != nil {
+			authTime, err = time.Parse("2006-01-02", auth.RequestTime)
+			if err != nil {
+				fmt.Printf("无法解析授权记录时间: %s, 错误: %v\n", auth.RequestTime, err)
+				continue
+			}
+		}
+		
+		if authTime.After(cutoffDate) || authTime.Equal(cutoffDate) {
+			filtered = append(filtered, auth)
+		}
+	}
+	
+	fmt.Printf("授权记录时间筛选: 原始=%d, 筛选后=%d\n", len(authorizations), len(filtered))
+	
+	return filtered
+}
+
 // calculateHealthProfile 计算健康档案统计
-func calculateHealthProfile(prescriptions []Prescription, accountID string) HealthProfile {
+func calculateHealthProfile(prescriptions []Prescription, supplementRecords []SupplementRecord, authorizations []Authorization, accountID string) HealthProfile {
 	profile := HealthProfile{
-		TotalPrescriptions: len(prescriptions),
-		TotalVisits:        len(prescriptions),
+		TotalPrescriptions: len(prescriptions), // 只统计原始病历数量
+		TotalVisits:        len(prescriptions) + len(supplementRecords) + len(authorizations), // 就诊次数 = 原始病历 + 补充记录 + 授权记录
 		Timeline:           make([]TimelineItem, 0),
 		DiseaseStats:       make([]DiseaseStatItem, 0),
 		HospitalStats:      make([]HospitalStatItem, 0),
@@ -223,14 +488,8 @@ func calculateHealthProfile(prescriptions []Prescription, accountID string) Heal
 	// 医院统计 map
 	hospitalMap := make(map[string]int)
 	
-	// 按时间倒序排序
-	sort.Slice(prescriptions, func(i, j int) bool {
-		return prescriptions[i].Created > prescriptions[j].Created
-	})
-	
-	// 生成时间线和统计数据
+	// 将原始病历添加到时间线
 	for _, presc := range prescriptions {
-		// 添加到时间线
 		timeline := TimelineItem{
 			Date:      presc.Created,
 			Hospital:  presc.OrganizationName,
@@ -246,11 +505,57 @@ func calculateHealthProfile(prescriptions []Prescription, accountID string) Heal
 		}
 		
 		// 统计医院
-		hospitalName := presc.OrganizationName
-		if hospitalName != "" {
-			hospitalMap[hospitalName]++
+		if presc.OrganizationName != "" {
+			hospitalMap[presc.OrganizationName]++
 		}
 	}
+	
+	// 将补充记录添加到时间线
+	for _, record := range supplementRecords {
+		// 获取记录类型的中文描述
+		recordTypeDesc := getRecordTypeDescription(record.RecordType)
+		
+		timeline := TimelineItem{
+			Date:      record.Created,
+			Hospital:  record.OrganizationName,
+			Doctor:    record.DoctorName,
+			Diagnosis: fmt.Sprintf("[%s] %s", recordTypeDesc, record.Diagnosis),
+			PrescID:   record.ID,
+		}
+		profile.Timeline = append(profile.Timeline, timeline)
+		
+		// 统计疾病（补充记录也计入）
+		if record.Diagnosis != "" {
+			diseaseMap[record.Diagnosis]++
+		}
+		
+		// 统计医院（补充记录也计入）
+		if record.OrganizationName != "" {
+			hospitalMap[record.OrganizationName]++
+		}
+	}
+	
+	// 将授权记录添加到时间线（作为转诊记录）
+	for _, auth := range authorizations {
+		timeline := TimelineItem{
+			Date:      auth.RequestTime,      // 使用 RequestTime
+			Hospital:  auth.DoctorOrgName,    // 使用 DoctorOrgName
+			Doctor:    auth.DoctorName,
+			Diagnosis: fmt.Sprintf("[授权转诊] %s", auth.Reason),
+			PrescID:   auth.ID,
+		}
+		profile.Timeline = append(profile.Timeline, timeline)
+		
+		// 统计医院（授权记录也计入）
+		if auth.DoctorOrgName != "" {
+			hospitalMap[auth.DoctorOrgName]++
+		}
+	}
+	
+	// 按时间倒序排序时间线
+	sort.Slice(profile.Timeline, func(i, j int) bool {
+		return profile.Timeline[i].Date > profile.Timeline[j].Date
+	})
 	
 	// 转换疾病统计为数组
 	for disease, count := range diseaseMap {
@@ -287,6 +592,20 @@ func calculateHealthProfile(prescriptions []Prescription, accountID string) Heal
 	return profile
 }
 
+// getRecordTypeDescription 获取记录类型的中文描述
+func getRecordTypeDescription(recordType string) string {
+	typeMap := map[string]string{
+		"consultation": "转诊",
+		"followup":     "复诊",
+		"emergency":    "急诊",
+	}
+	
+	if desc, ok := typeMap[recordType]; ok {
+		return desc
+	}
+	return recordType
+}
+
 // getOrganizationName 根据组织 MSP 获取组织名称
 func getOrganizationName(msp string) string {
 	orgMap := map[string]string{
@@ -303,14 +622,16 @@ func getOrganizationName(msp string) string {
 }
 
 // getAuthorizedDoctorsCount 获取授权医生数量
+// getAuthorizedDoctorsCount 获取授权医生数量
 func getAuthorizedDoctorsCount(accountID string) int {
-	// 从区块链查询授权记录 - 添加重试机制
+	// 从区块链查询授权记录 - 使用 queryAccessRequests 函数
 	var bodyBytes [][]byte
 	bodyBytes = append(bodyBytes, []byte(accountID))
+	bodyBytes = append(bodyBytes, []byte("patient")) // 角色参数
 	
 	maxRetries := 5
 	for i := 0; i < maxRetries; i++ {
-		resp, err := bc.ChannelQuery("queryAuthorizationsByPatient", bodyBytes)
+		resp, err := bc.ChannelQuery("queryAccessRequests", bodyBytes)
 		if err != nil {
 			errorStr := err.Error()
 			isRetryableError := strings.Contains(errorStr, "txid") && strings.Contains(errorStr, "exists") ||
@@ -325,15 +646,28 @@ func getAuthorizedDoctorsCount(accountID string) int {
 				time.Sleep(time.Duration(i+1) * 200 * time.Millisecond)
 				continue
 			}
+			fmt.Printf("查询授权医生数量失败: %v\n", err)
 			return 0
 		}
 		
-		var authorizations []interface{}
+		// 解析授权记录
+		var authorizations []Authorization
 		if err = json.Unmarshal(resp.Payload, &authorizations); err != nil {
+			fmt.Printf("解析授权记录失败: %v\n", err)
 			return 0
 		}
 		
-		return len(authorizations)
+		// 统计已批准的授权中不同医生的数量
+		doctorSet := make(map[string]bool)
+		for _, auth := range authorizations {
+			if auth.Status == "approved" && auth.DoctorID != "" {
+				doctorSet[auth.DoctorID] = true
+			}
+		}
+		
+		count := len(doctorSet)
+		fmt.Printf("授权医生数量: %d (总授权记录: %d, 已批准: %d)\n", count, len(authorizations), len(doctorSet))
+		return count
 	}
 	
 	return 0

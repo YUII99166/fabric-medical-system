@@ -1,6 +1,8 @@
 package blockchain
 
 import (
+	"fmt"
+	"log"
 	"sync"
 
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
@@ -18,6 +20,7 @@ var (
 	user          = "Admin"                                      // 用户
 	chainCodeName = "fabric-mims"                                // 链码名称
 	endpoints     = []string{"peer0.jd.com", "peer0.taobao.com"} // 要发送交易的节点
+	sdkReady      = false                                       // SDK 是否初始化成功
 )
 
 // Init 初始化
@@ -26,8 +29,12 @@ func Init() {
 	// 通过配置文件初始化SDK
 	sdk, err = fabsdk.New(config.FromFile(configPath))
 	if err != nil {
-		panic(err)
+		log.Printf("区块链SDK初始化失败: %v，后续链码调用将返回错误", err)
+		sdkReady = false
+		return
 	}
+	sdkReady = true
+	log.Println("区块链SDK初始化成功")
 }
 
 // getChannelClient 获取或创建通道客户端(单例模式)
@@ -61,6 +68,9 @@ func resetChannelClient() {
 // fcn: 要调用的链码函数名
 // args: 传递给链码函数的参数列表
 func ChannelExecute(fcn string, args [][]byte) (channel.Response, error) {
+	if !sdkReady || sdk == nil {
+		return channel.Response{}, fmt.Errorf("区块链SDK未初始化，请检查Docker网络是否正常运行")
+	}
 	cli, err := getChannelClient()
 	if err != nil {
 		// 如果获取客户端失败，重置客户端并重试一次
@@ -87,6 +97,9 @@ func ChannelExecute(fcn string, args [][]byte) (channel.Response, error) {
 // fcn: 要查询的链码函数名
 // args: 传递给链码函数的参数列表
 func ChannelQuery(fcn string, args [][]byte) (channel.Response, error) {
+	if !sdkReady || sdk == nil {
+		return channel.Response{}, fmt.Errorf("区块链SDK未初始化，请检查Docker网络是否正常运行")
+	}
 	cli, err := getChannelClient()
 	if err != nil {
 		// 如果获取客户端失败，重置客户端并重试一次
